@@ -1,0 +1,71 @@
+
+:root {
+  --indigo: #23305e; --indigo-claro: #e8eaf3; --cochinilla: #a3123a;
+  --qolle: #c9962b; --verde: #1f6b3a; --texto: #2a2522; --suave: #6b635d;
+  --fondo: #fafaf8; --blanco: #ffffff; --linea: #e3dfda;
+  --serif: "Alegreya", Georgia, "Times New Roman", serif;
+  --sans: "Alegreya Sans", "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fondo); color: var(--texto); font-family: var(--sans); }
+a { color: var(--indigo); text-decoration: none; }
+.tejido { height: 22px; background: linear-gradient(135deg, var(--cochinilla) 25%, var(--indigo) 75%); }
+header { background: var(--indigo); color: var(--blanco); }
+.barra { max-width: 1160px; margin: 0 auto; padding: .9rem 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+.marca { font-family: var(--serif); font-size: 1.9rem; font-weight: 700; color: var(--blanco); }
+.marca small { display: block; font-family: var(--sans); font-size: .9rem; font-weight: 400; color: var(--qolle); }
+main { max-width: 1160px; margin: 0 auto; padding: 2rem 1.25rem 3.5rem; min-height: 60vh; }
+h1, h2 { font-family: var(--serif); color: var(--indigo); margin-top: 0; }
+h1 { font-size: 2.3rem; margin-bottom: .5rem; }
+
+/* Botones */
+.boton { display: inline-block; font-weight: 700; padding: .6rem 1.15rem; background: var(--indigo); color: var(--blanco); text-align: center; border-radius: 4px; border: none; cursor: pointer; transition: background .2s; }
+.boton:hover { background: var(--cochinilla); color: var(--blanco); }
+.boton.grande { padding: .8rem 1.5rem; font-size: 1.08rem; background: var(--qolle); color: var(--indigo); width: 100%; }
+.boton.grande:hover { background: var(--cochinilla); color: var(--blanco); }
+.boton[disabled] { opacity: .45; cursor: not-allowed; }
+
+/* Detalles del Producto */
+.detalle { display: grid; grid-template-columns: 1.1fr 1fr; gap: 2.5rem; align-items: center; }
+.foto { aspect-ratio: 4 / 3; background: var(--indigo-claro); display: flex; align-items: center; justify-content: center; font-size: 3rem; position: relative; }
+.precio { font-size: 2rem; display: block; margin: .6rem 0; font-weight: bold; color: var(--indigo); }
+.ficha dt { color: var(--suave); font-weight: bold; }
+
+/* Formularios (Login y Registro) */
+.formulario { max-width: 400px; margin: 0 auto; background: var(--blanco); padding: 2rem; border: 1px solid var(--linea); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+input[type=text], input[type=password] { width: 100%; font-size: 1rem; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; font-family: var(--sans); }
+.formulario label { font-weight: bold; display: block; margin-bottom: 5px; }
+
+/* Alertas PHP */
+.alerta { padding: 1rem; background: #e2f0e6; color: var(--verde); border-left: 4px solid var(--verde); margin-bottom: 15px; font-weight: bold; text-align: center; border-radius: 0 4px 4px 0; }
+.alerta.error { background: #fae3e3; color: var(--cochinilla); border-left-color: var(--cochinilla); }
+
+/* Landing Page */
+.menu-horizontal { display: flex; gap: 1.5rem; align-items: center; }
+.menu-horizontal a { color: var(--blanco); font-weight: 500; transition: color 0.2s; }
+.menu-horizontal a:hover { color: var(--qolle); }
+.hero { background: var(--indigo); color: var(--blanco); text-align: center; padding: 4rem 1.25rem; }
+.hero h1 { color: var(--blanco); font-size: 3.5rem; margin-bottom: 0.5rem; }
+.hero p { font-size: 1.3rem; color: var(--qolle); margin-top: 0; font-weight: bold; }
+
+.quienes-somos { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; padding: 4rem 1.25rem; }
+.quienes-somos p { color: var(--suave); font-size: 1.1rem; }
+.quienes-somos .imagen-placeholder { background: var(--indigo-claro); aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; font-size: 4rem; border-radius: 8px; }
+
+@media (max-width: 768px) {
+  .quienes-somos { grid-template-columns: 1fr; padding: 2rem; }
+  .hero h1 { font-size: 2.5rem; }
+}
+
+/* Grilla de Productos */
+.rejilla { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 2rem; }
+.tarjeta { display: flex; flex-direction: column; height: 100%; text-decoration: none; background: var(--blanco); border: 1px solid var(--linea); border-radius: 8px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
+.tarjeta:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(35,48,94,0.1); }
+.tarjeta .foto { aspect-ratio: 4/3; background: var(--indigo-claro); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; position: relative; }
+.tarjeta .cuerpo { padding: 1rem; display: flex; flex-direction: column; flex: 1; }
+.tarjeta h3 { color: var(--texto); font-size: 1.2rem; margin: 0 0 .2rem; font-family: var(--serif); }
+.tarjeta .autor { color: var(--suave); font-size: .9rem; margin: 0 0 .6rem; }
+.tarjeta .precio { font-weight: bold; color: var(--indigo); font-size: 1.2rem; }
+.chip { position: absolute; top: .6rem; left: .6rem; background: rgba(255,255,255,0.9); padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: bold; color: var(--indigo); }
+

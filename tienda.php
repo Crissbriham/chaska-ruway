@@ -1,13 +1,16 @@
 <?php
 session_start();
-// 1 CONEXION CON MI BD
+
+// 1. CONEXIÓN CON LA BASE DE DATOS
 require_once 'conexion.php';
+
 // 2. LÓGICA DE LOGIN
 if(isset($_POST['login'])) {
     $user = $_POST['username'];
     $pass = $_POST['password'];
     $sql = "SELECT id_cliente FROM Usuarios WHERE username='$user' AND password_hash='$pass'";
     $resultado = $conexion->query($sql);
+    
     if($resultado && $resultado->num_rows > 0) {
         $_SESSION['id_cliente'] = $resultado->fetch_assoc()['id_cliente'];
         $_SESSION['nombre'] = $user;
@@ -15,46 +18,49 @@ if(isset($_POST['login'])) {
         $error_login = "Usuario o clave incorrecta";
     }
 }
-if(isset($_GET['logout'])) { session_destroy(); header("Location: tienda.php"); }
 
-// --- LÓGICA DE REGISTRO NUEVO ---
+if(isset($_GET['logout'])) { 
+    session_destroy(); 
+    header("Location: tienda.php"); 
+}
+
+// 3. LÓGICA DE REGISTRO NUEVO
 if(isset($_POST['btn_registrar'])) {
     $nuevo_user = $_POST['nuevo_user'];
     $nueva_pass = $_POST['password_reg'];
     
-    // Inserción segura usando la columna password_hash que tienes en tu BD
     $stmt_reg = $conexion->prepare("INSERT INTO Usuarios (username, password_hash) VALUES (?, ?)");
     $stmt_reg->bind_param("ss", $nuevo_user, $nueva_pass);
     
     if($stmt_reg->execute()) {
-        $msg_registro = "<p style='color: green; font-weight: bold; text-align: center;'>¡Registro exitoso! Ya puedes iniciar sesión.</p>";
+        $msg_registro = "<div class='alerta'>¡Registro exitoso! Ya puedes iniciar sesión.</div>";
     } else {
-        $msg_registro = "<p style='color: red; font-weight: bold; text-align: center;'>Error: El usuario ya existe.</p>";
+        $msg_registro = "<div class='alerta error'>Error: El usuario ya existe.</div>";
     }
     $stmt_reg->close();
 }
-// ---------------------------------
 
-
-// 3. LÓGICA DE COMPRA (Stored Procedure)
+// 4. LÓGICA DE COMPRA (Stored Procedure)
 if(isset($_POST['comprar']) && isset($_SESSION['id_cliente'])) {
     $id_cliente = $_SESSION['id_cliente'];
     $id_producto = $_POST['id_producto']; 
     $cantidad = 1; 
+    
     $stmt = $conexion->prepare("CALL ProcesarCompraDirecta(?, ?, ?)");
     $stmt->bind_param("iii", $id_cliente, $id_producto, $cantidad);
+    
     if($stmt->execute()) {
         $msg_compra = "<div class='alerta'>¡Éxito! Compra procesada por Stored Procedure. Stock descontado.</div>";
     }
     $stmt->close();
 }
 
-// 4. CONSULTAR TODO EL CATÁLOGO
-   $query_catalogo = "SELECT p.id_producto, p.nombre, p.precio, p.stock, c.nombre AS categoria, a.nombre_completo AS artesano, a.region_origen AS region 
-                      FROM Productos p 
-                      JOIN Categorias c ON p.id_categoria = c.id_categoria 
-                      JOIN Artesanos a ON p.id_artesano = a.id_artesano";
-   $res_catalogo = $conexion->query($query_catalogo); 
+// 5. CONSULTAR TODO EL CATÁLOGO
+$query_catalogo = "SELECT p.id_producto, p.nombre, p.precio, p.stock, c.nombre AS categoria, a.nombre_completo AS artesano, a.region_origen AS region 
+                   FROM Productos p 
+                   JOIN Categorias c ON p.id_categoria = c.id_categoria 
+                   JOIN Artesanos a ON p.id_artesano = a.id_artesano";
+$res_catalogo = $conexion->query($query_catalogo); 
 ?>
 
 <!doctype html>
@@ -72,49 +78,47 @@ if(isset($_POST['comprar']) && isset($_SESSION['id_cliente'])) {
   <header>
     <div class="barra">
       <a class="marca" href="tienda.php">Chaska Ruway</a>
-<nav class="menu-horizontal">
+      <nav class="menu-horizontal">
         <a href="tienda.php#catalogo">Catálogo</a>
         <a href="tienda.php#nosotros">Nosotros</a>
         <?php if(isset($_SESSION['id_cliente'])): ?>
-          <a href="#" style="color: var(--qolle);">Hola, <?php echo $_SESSION['nombre']; ?></a>
-          <a href="?logout=1" class="boton pequeno">Salir</a>
+          <a href="#">Hola, <?php echo $_SESSION['nombre']; ?></a>
+          <a href="?logout=1" class="boton">Salir</a>
         <?php else: ?>
           <a href="?login=1">Iniciar Sesión</a>
-          <a href="?registro=1" class="boton pequeno" style="background: var(--qolle); color: var(--indigo);">Crear Cuenta</a>
+          <a href="?registro=1" class="boton">Crear Cuenta</a>
         <?php endif; ?>
-      
       </nav>
     </div>
   </header>
-<?php if(isset($_GET['producto'])): 
-    // 1. VISTA DE DETALLE DEL PRODUCTO (Se oculta el Hero y Nosotros)
+
+  <?php if(isset($_GET['producto'])): 
+    // VISTA DE DETALLE DEL PRODUCTO
     $id_prod = (int)$_GET['producto'];
     $res_detalle = $conexion->query("SELECT p.id_producto, p.nombre, p.precio, p.stock, c.nombre AS categoria, a.nombre_completo AS artesano, a.region_origen AS region FROM Productos p JOIN Categorias c ON p.id_categoria = c.id_categoria JOIN Artesanos a ON p.id_artesano = a.id_artesano WHERE p.id_producto = $id_prod");
     $detalle = $res_detalle->fetch_assoc();
   ?>
-  <main style="padding-top: 2rem;">
+  <main>
     <div class="contenedor">
-      <a href="tienda.php" style="color: var(--suave); text-decoration: none;">← Volver al catálogo</a>
+      <a href="tienda.php">← Volver al catálogo</a>
       
       <?php if(isset($msg_compra)) echo "<br><br>".$msg_compra; ?>
 
-      <div class="detalle" style="margin-top: 1rem;">
+      <div class="detalle">
         <div class="foto">📦</div>
         <div>
-          <p style="color: var(--cochinilla); font-weight: bold; text-transform: uppercase; margin: 0;"><?php echo $detalle['categoria']; ?></p>
+          <p><strong><?php echo $detalle['categoria']; ?></strong></p>
           <h1><?php echo $detalle['nombre']; ?></h1>
           <p>Hecho por <strong><?php echo $detalle['artesano']; ?></strong>, <?php echo $detalle['region']; ?></p>
           <span class="precio">S/ <?php echo $detalle['precio']; ?></span>
           
           <dl class="ficha">
             <dt>Stock Disponible</dt>
-            <dd style="color: <?php echo ($detalle['stock'] > 0) ? 'var(--verde)' : 'var(--cochinilla)'; ?>; font-weight: bold; font-size: 1.2rem;">
-              <?php echo $detalle['stock']; ?> unidades
-            </dd>
+            <dd><?php echo $detalle['stock']; ?> unidades</dd>
           </dl>
 
           <?php if(!isset($_SESSION['id_cliente'])): ?>
-            <p style="color: var(--cochinilla); font-weight: bold;">Debes iniciar sesión para comprar.</p>
+            <p><strong>Debes iniciar sesión para comprar.</strong></p>
           <?php elseif($detalle['stock'] > 0): ?>
             <form method="POST" action="tienda.php?producto=<?php echo $detalle['id_producto']; ?>">
               <input type="hidden" name="id_producto" value="<?php echo $detalle['id_producto']; ?>">
@@ -128,41 +132,41 @@ if(isset($_POST['comprar']) && isset($_SESSION['id_cliente'])) {
     </div>
   </main>
 
-<?php else: ?>
+  <?php else: ?>
 
     <?php if(isset($_GET['login']) || isset($_GET['registro'])): ?>
       <!-- PANTALLAS DE LOGIN Y REGISTRO AISLADAS -->
-      <main style="padding-top: 4rem; min-height: 60vh;">
+      <main>
         <div class="contenedor">
-          <div class="formulario" style="max-width: 400px; margin: 0 auto; background: white; padding: 2rem; border: 1px solid var(--linea); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <div class="formulario">
             
             <?php if(isset($_GET['login'])): ?>
-              <h2 style="text-align: center; color: var(--indigo); margin-top:0;">Ingresar</h2>
+              <h2>Ingresar</h2>
               <form method="POST" action="tienda.php?login=1">
-                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Usuario</label>
-                <input type="text" name="username" placeholder="ej. cmendoza85" required style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;">
-                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Contraseña</label>
-                <input type="password" name="password" placeholder="******" required style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
-                <button type="submit" name="login" class="boton" style="width: 100%; padding: 10px; font-size: 1.1rem;">Iniciar Sesión</button>
+                <label>Usuario</label>
+                <input type="text" name="username" placeholder="ej. cmendoza85" required>
+                <label>Contraseña</label>
+                <input type="password" name="password" placeholder="******" required>
+                <button type="submit" name="login" class="boton grande">Iniciar Sesión</button>
               </form>
-              <?php if(isset($error_login)) echo "<p style='color:var(--cochinilla); text-align:center; font-weight:bold; margin-top:15px;'>$error_login</p>"; ?>
+              <?php if(isset($error_login)) echo "<div class='alerta error'>$error_login</div>"; ?>
             
-           <?php elseif(isset($_GET['registro'])): ?>
-              <h2 style="text-align: center; color: var(--indigo); margin-top:0;">Crear Cuenta</h2>
+            <?php elseif(isset($_GET['registro'])): ?>
+              <h2>Crear Cuenta</h2>
               
               <?php if(isset($msg_registro)) echo $msg_registro; ?>
               
               <form method="POST" action="tienda.php?registro=1">
-                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Nuevo Usuario</label>
-                <input type="text" name="nuevo_user" placeholder="ej. nuevo_cliente" required style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;">
-                
-                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Contraseña</label>
-                <input type="password" name="password_reg" placeholder="******" required style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
-                
-                <button type="submit" name="btn_registrar" class="boton" style="width: 100%; padding: 10px; font-size: 1.1rem; background: var(--qolle); color: var(--indigo);">Registrarme</button>
+                <label>Nuevo Usuario</label>
+                <input type="text" name="nuevo_user" placeholder="ej. nuevo_cliente" required>
+                <label>Contraseña</label>
+                <input type="password" name="password_reg" placeholder="******" required>
+                <button type="submit" name="btn_registrar" class="boton grande">Registrarme</button>
               </form>
               <br>
-              <a href="tienda.php" style="display: block; text-align: center; text-decoration: none; color: var(--indigo); font-weight: bold;">Volver al inicio</a>
+              <div style="text-align: center;">
+                  <a href="tienda.php">Volver al inicio</a>
+              </div>
             <?php endif; ?>
 
           </div>
@@ -186,7 +190,7 @@ if(isset($_POST['comprar']) && isset($_SESSION['id_cliente'])) {
         </section>
 
         <section id="catalogo" class="contenedor">
-          <h2 style="text-align: center; font-size: 2.2rem; margin-bottom: 2rem; color: var(--indigo);">Nuestro Catálogo</h2>
+          <h2>Nuestro Catálogo</h2>
           
           <ul class="rejilla">
             <?php 
@@ -199,7 +203,7 @@ if(isset($_POST['comprar']) && isset($_SESSION['id_cliente'])) {
                     <h3><?php echo $prod['nombre']; ?></h3>
                     <p class="autor"><?php echo $prod['artesano']; ?> · <?php echo $prod['region']; ?></p>
                     <span class="precio">S/ <?php echo $prod['precio']; ?></span>
-                    <span style="font-size: 0.85rem; font-weight: bold; margin-top: 5px; color: <?php echo ($prod['stock']>0)?'var(--verde)':'var(--cochinilla)'; ?>;">Stock: <?php echo $prod['stock']; ?></span>
+                    <span>Stock: <?php echo $prod['stock']; ?></span>
                   </div>
                 </a>
               </li>
@@ -211,8 +215,8 @@ if(isset($_POST['comprar']) && isset($_SESSION['id_cliente'])) {
   <?php endif; ?>
 
   <!-- PIE DE PÁGINA -->
-  <footer style="background: var(--texto); color: white; text-align: center; padding: 2rem; margin-top: 4rem;">
-    <p>Proyecto Universitario - Sistemas Operativos UPC</p>
+  <footer style="text-align: center; padding: 2rem;">
+    <p>Proyecto Universitario -- Sistemas Operativos UPC</p>
   </footer>
 </body>
 </html>
