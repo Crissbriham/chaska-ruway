@@ -17,6 +17,25 @@ if(isset($_POST['login'])) {
 }
 if(isset($_GET['logout'])) { session_destroy(); header("Location: tienda.php"); }
 
+// --- LÓGICA DE REGISTRO NUEVO ---
+if(isset($_POST['btn_registrar'])) {
+    $nuevo_user = $_POST['nuevo_user'];
+    $nueva_pass = $_POST['password_reg'];
+    
+    // Inserción segura usando la columna password_hash que tienes en tu BD
+    $stmt_reg = $conexion->prepare("INSERT INTO Usuarios (username, password_hash) VALUES (?, ?)");
+    $stmt_reg->bind_param("ss", $nuevo_user, $nueva_pass);
+    
+    if($stmt_reg->execute()) {
+        $msg_registro = "<p style='color: green; font-weight: bold; text-align: center;'>¡Registro exitoso! Ya puedes iniciar sesión.</p>";
+    } else {
+        $msg_registro = "<p style='color: red; font-weight: bold; text-align: center;'>Error: El usuario ya existe.</p>";
+    }
+    $stmt_reg->close();
+}
+// ---------------------------------
+
+
 // 3. LÓGICA DE COMPRA (Stored Procedure)
 if(isset($_POST['comprar']) && isset($_SESSION['id_cliente'])) {
     $id_cliente = $_SESSION['id_cliente'];
@@ -128,10 +147,22 @@ if(isset($_POST['comprar']) && isset($_SESSION['id_cliente'])) {
               </form>
               <?php if(isset($error_login)) echo "<p style='color:var(--cochinilla); text-align:center; font-weight:bold; margin-top:15px;'>$error_login</p>"; ?>
             
-            <?php elseif(isset($_GET['registro'])): ?>
+           <?php elseif(isset($_GET['registro'])): ?>
               <h2 style="text-align: center; color: var(--indigo); margin-top:0;">Crear Cuenta</h2>
-              <p style="text-align: center; color: var(--suave);">El formulario de registro de nuevos clientes se conectará a la base de datos en el examen parcial.</p>
-              <a href="tienda.php" class="boton" style="display: block; text-align: center; text-decoration: none;">Volver al inicio</a>
+              
+              <?php if(isset($msg_registro)) echo $msg_registro; ?>
+              
+              <form method="POST" action="tienda.php?registro=1">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Nuevo Usuario</label>
+                <input type="text" name="nuevo_user" placeholder="ej. nuevo_cliente" required style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;">
+                
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Contraseña</label>
+                <input type="password" name="password_reg" placeholder="******" required style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+                
+                <button type="submit" name="btn_registrar" class="boton" style="width: 100%; padding: 10px; font-size: 1.1rem; background: var(--qolle); color: var(--indigo);">Registrarme</button>
+              </form>
+              <br>
+              <a href="tienda.php" style="display: block; text-align: center; text-decoration: none; color: var(--indigo); font-weight: bold;">Volver al inicio</a>
             <?php endif; ?>
 
           </div>
