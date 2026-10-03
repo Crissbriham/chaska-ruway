@@ -79,9 +79,9 @@ if(isset($_POST['comprar']) && isset($_SESSION['id_cliente'])) {
 
 // 5. CONSULTAR TODO EL CATÁLOGO
 $query_catalogo = "SELECT p.id_producto, p.nombre, p.precio, p.stock, c.nombre AS categoria, a.nombre_completo AS artesano, a.region_origen AS region 
-                   FROM Productos p 
-                   JOIN Categorias c ON p.id_categoria = c.id_categoria 
-                   JOIN Artesanos a ON p.id_artesano = a.id_artesano";
+                   FROM productos p 
+                   JOIN categorias c ON p.id_categoria = c.id_categoria 
+                   JOIN artesanos a ON p.id_artesano = a.id_artesano";
 $res_catalogo = $conexion->query($query_catalogo); 
 ?>
 
