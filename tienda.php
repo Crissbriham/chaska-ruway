@@ -24,7 +24,7 @@ if(isset($_GET['logout'])) {
     header("Location: tienda.php"); 
 }
 
-// 3. LÓGICA DE REGISTRO NUEVO
+
 // 3. LÓGICA DE REGISTRO NUEVO
 if(isset($_POST['btn_registrar'])) {
     $nombres = $_POST['nombres'];
@@ -160,104 +160,103 @@ $res_catalogo = $conexion->query($query_catalogo);
     </div>
   </main>
 
-  <?php else: ?>
+  <?php elseif(isset($_GET['login']) || isset($_GET['registro'])): ?>
+    <!-- PANTALLAS DE LOGIN Y REGISTRO AISLADAS -->
+    <main>
+      <div class="contenedor">
+        <div class="formulario">
+          
+          <?php if(isset($_GET['login'])): ?>
+            <h2>Ingresar</h2>
+            <form method="POST" action="tienda.php?login=1">
+              <label>Usuario</label>
+              <input type="text" name="username" placeholder="ej. cmendoza85" required>
+              <label>Contraseña</label>
+              <input type="password" name="password" placeholder="******" required>
+              <button type="submit" name="login" class="boton grande">Iniciar Sesión</button>
+            </form>
+            <?php if(isset($error_login)) echo "<div class='alerta error'>$error_login</div>"; ?>
+          
+          <?php elseif(isset($_GET['registro'])): ?>
+            <h2>Crear Cuenta</h2>
+            
+            <?php if(isset($msg_registro)) echo $msg_registro; ?>
+            
+            <form method="POST" action="tienda.php?registro=1">
+              <!-- Datos del Cliente -->
+              <label>Nombres Completos</label>
+              <input type="text" name="nombres" placeholder="Ej. Juan Pérez" required>
+              
+              <label>Correo Electrónico</label>
+              <input type="email" name="email" placeholder="juan@correo.com" required>
+              
+              <label>Dirección de Envío (Opcional)</label>
+              <input type="text" name="direccion_envio" placeholder="Av. Los Incas 123">
+              
+              <hr style="border: 0; border-top: 1px solid var(--linea); margin: 20px 0;">
+              
+              <!-- Datos de Acceso -->
+              <label>Nombre de Usuario</label>
+              <input type="text" name="nuevo_user" placeholder="ej. jperez88" required>
+              
+              <label>Contraseña</label>
+              <input type="password" name="password_reg" placeholder="******" required>
+              
+              <button type="submit" name="btn_registrar" class="boton grande">Registrarme</button>
+            </form>
+            <br>
+            <div style="text-align: center;">
+                <a href="tienda.php">Volver al inicio</a>
+            </div>
+          <?php endif; ?>
 
-    <?php if(isset($_GET['login']) || isset($_GET['registro'])): ?>
-      <!-- PANTALLAS DE LOGIN Y REGISTRO AISLADAS -->
-      <main>
-        <div class="contenedor">
-          <div class="formulario">
-            
-            <?php if(isset($_GET['login'])): ?>
-              <h2>Ingresar</h2>
-              <form method="POST" action="tienda.php?login=1">
-                <label>Usuario</label>
-                <input type="text" name="username" placeholder="ej. cmendoza85" required>
-                <label>Contraseña</label>
-                <input type="password" name="password" placeholder="******" required>
-                <button type="submit" name="login" class="boton grande">Iniciar Sesión</button>
-              </form>
-              <?php if(isset($error_login)) echo "<div class='alerta error'>$error_login</div>"; ?>
-            
-       <?php elseif(isset($_GET['registro'])): ?>
-              <h2>Crear Cuenta</h2>
-              
-              <?php if(isset($msg_registro)) echo $msg_registro; ?>
-              
-              <form method="POST" action="tienda.php?registro=1">
-                <!-- Datos del Cliente -->
-                <label>Nombres Completos</label>
-                <input type="text" name="nombres" placeholder="Ej. Juan Pérez" required>
-                
-                <label>Correo Electrónico</label>
-                <input type="email" name="email" placeholder="juan@correo.com" required>
-                
-                <label>Dirección de Envío (Opcional)</label>
-                <input type="text" name="direccion_envio" placeholder="Av. Los Incas 123">
-                
-                <hr style="border: 0; border-top: 1px solid var(--linea); margin: 20px 0;">
-                
-                <!-- Datos de Acceso -->
-                <label>Nombre de Usuario</label>
-                <input type="text" name="nuevo_user" placeholder="ej. jperez88" required>
-                
-                <label>Contraseña</label>
-                <input type="password" name="password_reg" placeholder="******" required>
-                
-                <button type="submit" name="btn_registrar" class="boton grande">Registrarme</button>
-              </form>
-              <br>
-              <div style="text-align: center;">
-                  <a href="tienda.php">Volver al inicio</a>
-              </div>
-            <?php endif; ?>
-      <!-- VISTA PRINCIPAL (Hero, Nosotros y Grilla) -->
-      <section class="hero">
-        <h1>Ya kache</h1>
-        <p>att: Scarlet te amo</p>
+        </div> <!-- Cierra formulario -->
+      </div> <!-- Cierra contenedor -->
+    </main>
+
+  <?php else: ?>
+    <!-- VISTA PRINCIPAL (Hero, Nosotros y Grilla) -->
+    <section class="hero">
+      <h1>Chaska Ruway</h1>
+      <p>Artesanía peruana, directo de quien la hace.</p>
+    </section>
+
+    <main>
+      <section id="nosotros" class="quienes-somos">
+        <div class="texto">
+          <h2>¿Quiénes Somos?</h2>
+          <p>En quechua, <strong>chaska</strong> es el lucero y <strong>ruway</strong> es hacer. Somos una plataforma digital que conecta a los maestros artesanos de todas las regiones del Perú directamente con el mundo.</p>
+        </div>
+        <div class="imagen-placeholder">🏺</div>
       </section>
 
-      <main>
-        <section id="nosotros" class="quienes-somos">
-          <div class="texto">
-            <h2>¿Quiénes Somos?</h2>
-            <p>En quechua, <strong>chaska</strong> es el lucero y <strong>ruway</strong> es hacer. Somos una plataforma digital que conecta a los maestros artesanos de todas las regiones del Perú directamente con el mundo.</p>
-          </div>
-          <div class="imagen-placeholder">🏺</div>
-        </section>
-
-        <section id="catalogo" class="contenedor">
-          <h2>Nuestro Catálogo</h2>
-          
-          <ul class="rejilla">
-            <?php 
-            $res_catalogo = $conexion->query($query_catalogo);
-            while($prod = $res_catalogo->fetch_assoc()): ?>
-              <li>
-                <a class="tarjeta" href="?producto=<?php echo $prod['id_producto']; ?>">
-                  <div class="foto">📦<span class="chip"><?php echo $prod['categoria']; ?></span></div>
-                  <div class="cuerpo">
-                    <h3><?php echo $prod['nombre']; ?></h3>
-                    <p class="autor"><?php echo $prod['artesano']; ?> · <?php echo $prod['region']; ?></p>
-                    <span class="precio">S/ <?php echo $prod['precio']; ?></span>
-                    <span>Stock: <?php echo $prod['stock']; ?></span>
-                  </div>
-                </a>
-              </li>
-            <?php endwhile; ?>
-          </ul>
-        </section>
-      </main>
-    <?php endif; ?>
+      <section id="catalogo" class="contenedor">
+        <h2>Nuestro Catálogo</h2>
+        
+        <ul class="rejilla">
+          <?php 
+          $res_catalogo = $conexion->query($query_catalogo);
+          while($prod = $res_catalogo->fetch_assoc()): ?>
+            <li>
+              <a class="tarjeta" href="?producto=<?php echo $prod['id_producto']; ?>">
+                <div class="foto">📦<span class="chip"><?php echo $prod['categoria']; ?></span></div>
+                <div class="cuerpo">
+                  <h3><?php echo $prod['nombre']; ?></h3>
+                  <p class="autor"><?php echo $prod['artesano']; ?> · <?php echo $prod['region']; ?></p>
+                  <span class="precio">S/ <?php echo $prod['precio']; ?></span>
+                  <span>Stock: <?php echo $prod['stock']; ?></span>
+                </div>
+              </a>
+            </li>
+          <?php endwhile; ?>
+        </ul>
+      </section>
+    </main>
   <?php endif; ?>
 
   <!-- PIE DE PÁGINA -->
   <footer style="text-align: center; padding: 2rem;">
-    <p> curso chicha </p>
+    <p>Proyecto Universitario - Sistemas Operativos UPC</p>
   </footer>
 </body>
 </html>
-
-
-
-
