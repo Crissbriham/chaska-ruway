@@ -213,8 +213,8 @@ $res_catalogo = $conexion->query($query_catalogo);
             <?php endif; ?>
       <!-- VISTA PRINCIPAL (Hero, Nosotros y Grilla) -->
       <section class="hero">
-        <h1>Chaska Ruway</h1>
-        <p>Artesanía peruana, directo de quien la hace.</p>
+        <h1>Ya kache</h1>
+        <p>att: Scarlet te amo</p>
       </section>
 
       <main>
@@ -253,7 +253,11 @@ $res_catalogo = $conexion->query($query_catalogo);
 
   <!-- PIE DE PÁGINA -->
   <footer style="text-align: center; padding: 2rem;">
-    <p>Proyecto Universitario -- Sistemas Operativos UPC</p>
+    <p> curso chicha </p>
   </footer>
 </body>
 </html>
+
+
+
+
