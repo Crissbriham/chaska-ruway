@@ -115,7 +115,7 @@ $res_catalogo = $conexion->query($query_catalogo);
 
   <?php if(isset($_GET['producto'])): 
     $id_prod = (int)$_GET['producto'];
-    $res_detalle = $conexion->query("SELECT p.id_producto, p.nombre, p.precio, p.stock, c.nombre AS categoria, a.nombre_completo AS artesano, a.region_origen AS region FROM Productos p JOIN Categorias c ON p.id_categoria = c.id_categoria JOIN Artesanos a ON p.id_artesano = a.id_artesano WHERE p.id_producto = $id_prod");
+    $res_detalle = $conexion->query("SELECT p.id_producto, p.nombre, p.precio, p.stock, c.nombre AS categoria, a.nombre_completo AS artesano, a.region_origen AS region FROM productos p JOIN categorias c ON p.id_categoria = c.id_categoria JOIN artesanos a ON p.id_artesano = a.id_artesano WHERE p.id_producto = $id_prod");
     $detalle = $res_detalle ? $res_detalle->fetch_assoc() : null;
   ?>
   <main>
