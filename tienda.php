@@ -25,19 +25,47 @@ if(isset($_GET['logout'])) {
 }
 
 // 3. LÓGICA DE REGISTRO NUEVO
+// 3. LÓGICA DE REGISTRO NUEVO
 if(isset($_POST['btn_registrar'])) {
+    $nombres = $_POST['nombres'];
+    $email = $_POST['email'];
+    $direccion = $_POST['direccion_envio'];
+    
     $nuevo_user = $_POST['nuevo_user'];
     $nueva_pass = $_POST['password_reg'];
     
-    $stmt_reg = $conexion->prepare("INSERT INTO Usuarios (username, password_hash) VALUES (?, ?)");
-    $stmt_reg->bind_param("ss", $nuevo_user, $nueva_pass);
+    // Iniciamos una transacción por seguridad
+    $conexion->begin_transaction();
     
-    if($stmt_reg->execute()) {
+    try {
+        // PASO 1: Crear el Cliente
+        $stmt_cliente = $conexion->prepare("INSERT INTO Clientes (nombres, email, direccion_envio) VALUES (?, ?, ?)");
+        if (!$stmt_cliente) throw new Exception("Error al preparar Cliente: " . $conexion->error);
+        
+        $stmt_cliente->bind_param("sss", $nombres, $email, $direccion);
+        $stmt_cliente->execute();
+        
+        // Obtenemos el ID del cliente recién creado
+        $id_cliente_nuevo = $conexion->insert_id;
+        $stmt_cliente->close();
+        
+        // PASO 2: Crear el Usuario amarrado a ese Cliente
+        $stmt_user = $conexion->prepare("INSERT INTO Usuarios (id_cliente, username, password_hash) VALUES (?, ?, ?)");
+        if (!$stmt_user) throw new Exception("Error al preparar Usuario: " . $conexion->error);
+        
+        $stmt_user->bind_param("iss", $id_cliente_nuevo, $nuevo_user, $nueva_pass);
+        $stmt_user->execute();
+        $stmt_user->close();
+        
+        // Si todo salió bien, guardamos definitivamente en la BD
+        $conexion->commit();
         $msg_registro = "<div class='alerta'>¡Registro exitoso! Ya puedes iniciar sesión.</div>";
-    } else {
-        $msg_registro = "<div class='alerta error'>Error: El usuario ya existe.</div>";
+        
+    } catch (Exception $e) {
+        // Si hay error (ej. email duplicado), deshacemos todo
+        $conexion->rollback();
+        $msg_registro = "<div class='alerta error' style='font-size: 0.9rem;'>" . $e->getMessage() . "</div>";
     }
-    $stmt_reg->close();
 }
 
 // 4. LÓGICA DE COMPRA (Stored Procedure)
@@ -151,16 +179,31 @@ $res_catalogo = $conexion->query($query_catalogo);
               </form>
               <?php if(isset($error_login)) echo "<div class='alerta error'>$error_login</div>"; ?>
             
-            <?php elseif(isset($_GET['registro'])): ?>
+       <?php elseif(isset($_GET['registro'])): ?>
               <h2>Crear Cuenta</h2>
               
               <?php if(isset($msg_registro)) echo $msg_registro; ?>
               
               <form method="POST" action="tienda.php?registro=1">
-                <label>Nuevo Usuario</label>
-                <input type="text" name="nuevo_user" placeholder="ej. nuevo_cliente" required>
+                <!-- Datos del Cliente -->
+                <label>Nombres Completos</label>
+                <input type="text" name="nombres" placeholder="Ej. Juan Pérez" required>
+                
+                <label>Correo Electrónico</label>
+                <input type="email" name="email" placeholder="juan@correo.com" required>
+                
+                <label>Dirección de Envío (Opcional)</label>
+                <input type="text" name="direccion_envio" placeholder="Av. Los Incas 123">
+                
+                <hr style="border: 0; border-top: 1px solid var(--linea); margin: 20px 0;">
+                
+                <!-- Datos de Acceso -->
+                <label>Nombre de Usuario</label>
+                <input type="text" name="nuevo_user" placeholder="ej. jperez88" required>
+                
                 <label>Contraseña</label>
                 <input type="password" name="password_reg" placeholder="******" required>
+                
                 <button type="submit" name="btn_registrar" class="boton grande">Registrarme</button>
               </form>
               <br>
@@ -168,12 +211,6 @@ $res_catalogo = $conexion->query($query_catalogo);
                   <a href="tienda.php">Volver al inicio</a>
               </div>
             <?php endif; ?>
-
-          </div>
-        </div>
-      </main>
-
-    <?php else: ?>
       <!-- VISTA PRINCIPAL (Hero, Nosotros y Grilla) -->
       <section class="hero">
         <h1>Chaska Ruway</h1>
