@@ -22,8 +22,8 @@ if(isset($_POST['login'])) {
 if(isset($_GET['logout'])) { 
     session_destroy(); 
     header("Location: tienda.php"); 
+    exit();
 }
-
 
 // 3. LÓGICA DE REGISTRO NUEVO
 if(isset($_POST['btn_registrar'])) {
@@ -34,22 +34,18 @@ if(isset($_POST['btn_registrar'])) {
     $nuevo_user = $_POST['nuevo_user'];
     $nueva_pass = $_POST['password_reg'];
     
-    // Iniciamos una transacción por seguridad
     $conexion->begin_transaction();
     
     try {
-        // PASO 1: Crear el Cliente
         $stmt_cliente = $conexion->prepare("INSERT INTO Clientes (nombres, email, direccion_envio) VALUES (?, ?, ?)");
         if (!$stmt_cliente) throw new Exception("Error al preparar Cliente: " . $conexion->error);
         
         $stmt_cliente->bind_param("sss", $nombres, $email, $direccion);
         $stmt_cliente->execute();
         
-        // Obtenemos el ID del cliente recién creado
         $id_cliente_nuevo = $conexion->insert_id;
         $stmt_cliente->close();
         
-        // PASO 2: Crear el Usuario amarrado a ese Cliente
         $stmt_user = $conexion->prepare("INSERT INTO Usuarios (id_cliente, username, password_hash) VALUES (?, ?, ?)");
         if (!$stmt_user) throw new Exception("Error al preparar Usuario: " . $conexion->error);
         
@@ -57,12 +53,10 @@ if(isset($_POST['btn_registrar'])) {
         $stmt_user->execute();
         $stmt_user->close();
         
-        // Si todo salió bien, guardamos definitivamente en la BD
         $conexion->commit();
         $msg_registro = "<div class='alerta'>¡Registro exitoso! Ya puedes iniciar sesión.</div>";
         
     } catch (Exception $e) {
-        // Si hay error (ej. email duplicado), deshacemos todo
         $conexion->rollback();
         $msg_registro = "<div class='alerta error' style='font-size: 0.9rem;'>" . $e->getMessage() . "</div>";
     }
@@ -102,7 +96,6 @@ $res_catalogo = $conexion->query($query_catalogo);
 <body>
   <div class="tejido" aria-hidden="true"></div>
   
-  <!-- CABECERA Y MENÚ HORIZONTAL -->
   <header>
     <div class="barra">
       <a class="marca" href="tienda.php">Chaska Ruway</a>
@@ -110,7 +103,7 @@ $res_catalogo = $conexion->query($query_catalogo);
         <a href="tienda.php#catalogo">Catálogo</a>
         <a href="tienda.php#nosotros">Nosotros</a>
         <?php if(isset($_SESSION['id_cliente'])): ?>
-          <a href="#">Hola, <?php echo $_SESSION['nombre']; ?></a>
+          <a href="#">Hola, <?php echo htmlspecialchars($_SESSION['nombre']); ?></a>
           <a href="?logout=1" class="boton">Salir</a>
         <?php else: ?>
           <a href="?login=1">Iniciar Sesión</a>
@@ -121,10 +114,9 @@ $res_catalogo = $conexion->query($query_catalogo);
   </header>
 
   <?php if(isset($_GET['producto'])): 
-    // VISTA DE DETALLE DEL PRODUCTO
     $id_prod = (int)$_GET['producto'];
     $res_detalle = $conexion->query("SELECT p.id_producto, p.nombre, p.precio, p.stock, c.nombre AS categoria, a.nombre_completo AS artesano, a.region_origen AS region FROM Productos p JOIN Categorias c ON p.id_categoria = c.id_categoria JOIN Artesanos a ON p.id_artesano = a.id_artesano WHERE p.id_producto = $id_prod");
-    $detalle = $res_detalle->fetch_assoc();
+    $detalle = $res_detalle ? $res_detalle->fetch_assoc() : null;
   ?>
   <main>
     <div class="contenedor">
@@ -132,12 +124,13 @@ $res_catalogo = $conexion->query($query_catalogo);
       
       <?php if(isset($msg_compra)) echo "<br><br>".$msg_compra; ?>
 
+      <?php if($detalle): ?>
       <div class="detalle">
         <div class="foto">📦</div>
         <div>
-          <p><strong><?php echo $detalle['categoria']; ?></strong></p>
-          <h1><?php echo $detalle['nombre']; ?></h1>
-          <p>Hecho por <strong><?php echo $detalle['artesano']; ?></strong>, <?php echo $detalle['region']; ?></p>
+          <p><strong><?php echo htmlspecialchars($detalle['categoria']); ?></strong></p>
+          <h1><?php echo htmlspecialchars($detalle['nombre']); ?></h1>
+          <p>Hecho por <strong><?php echo htmlspecialchars($detalle['artesano']); ?></strong>, <?php echo htmlspecialchars($detalle['region']); ?></p>
           <span class="precio">S/ <?php echo $detalle['precio']; ?></span>
           
           <dl class="ficha">
@@ -157,11 +150,13 @@ $res_catalogo = $conexion->query($query_catalogo);
           <?php endif; ?>
         </div>
       </div>
+      <?php else: ?>
+        <p>Producto no encontrado.</p>
+      <?php endif; ?>
     </div>
   </main>
 
   <?php elseif(isset($_GET['login']) || isset($_GET['registro'])): ?>
-    <!-- PANTALLAS DE LOGIN Y REGISTRO AISLADAS -->
     <main>
       <div class="contenedor">
         <div class="formulario">
@@ -183,7 +178,6 @@ $res_catalogo = $conexion->query($query_catalogo);
             <?php if(isset($msg_registro)) echo $msg_registro; ?>
             
             <form method="POST" action="tienda.php?registro=1">
-              <!-- Datos del Cliente -->
               <label>Nombres Completos</label>
               <input type="text" name="nombres" placeholder="Ej. Juan Pérez" required>
               
@@ -195,7 +189,6 @@ $res_catalogo = $conexion->query($query_catalogo);
               
               <hr style="border: 0; border-top: 1px solid var(--linea); margin: 20px 0;">
               
-              <!-- Datos de Acceso -->
               <label>Nombre de Usuario</label>
               <input type="text" name="nuevo_user" placeholder="ej. jperez88" required>
               
@@ -210,12 +203,11 @@ $res_catalogo = $conexion->query($query_catalogo);
             </div>
           <?php endif; ?>
 
-        </div> <!-- Cierra formulario -->
-      </div> <!-- Cierra contenedor -->
+        </div>
+      </div>
     </main>
 
   <?php else: ?>
-    <!-- VISTA PRINCIPAL (Hero, Nosotros y Grilla) -->
     <section class="hero">
       <h1>Chaska Ruway</h1>
       <p>Artesanía peruana, directo de quien la hace.</p>
@@ -235,26 +227,28 @@ $res_catalogo = $conexion->query($query_catalogo);
         
         <ul class="rejilla">
           <?php 
-          $res_catalogo = $conexion->query($query_catalogo);
-          while($prod = $res_catalogo->fetch_assoc()): ?>
-            <li>
-              <a class="tarjeta" href="?producto=<?php echo $prod['id_producto']; ?>">
-                <div class="foto">📦<span class="chip"><?php echo $prod['categoria']; ?></span></div>
-                <div class="cuerpo">
-                  <h3><?php echo $prod['nombre']; ?></h3>
-                  <p class="autor"><?php echo $prod['artesano']; ?> · <?php echo $prod['region']; ?></p>
-                  <span class="precio">S/ <?php echo $prod['precio']; ?></span>
-                  <span>Stock: <?php echo $prod['stock']; ?></span>
-                </div>
-              </a>
-            </li>
-          <?php endwhile; ?>
+          if($res_catalogo && $res_catalogo->num_rows > 0):
+            while($prod = $res_catalogo->fetch_assoc()): ?>
+              <li>
+                <a class="tarjeta" href="?producto=<?php echo $prod['id_producto']; ?>">
+                  <div class="foto">📦<span class="chip"><?php echo htmlspecialchars($prod['categoria']); ?></span></div>
+                  <div class="cuerpo">
+                    <h3><?php echo htmlspecialchars($prod['nombre']); ?></h3>
+                    <p class="autor"><?php echo htmlspecialchars($prod['artesano']); ?> · <?php echo htmlspecialchars($prod['region']); ?></p>
+                    <span class="precio">S/ <?php echo $prod['precio']; ?></span>
+                    <span>Stock: <?php echo $prod['stock']; ?></span>
+                  </div>
+                </a>
+              </li>
+            <?php endwhile;
+          else: ?>
+            <p>No se encontraron productos en el catálogo.</p>
+          <?php endif; ?>
         </ul>
       </section>
     </main>
   <?php endif; ?>
 
-  <!-- PIE DE PÁGINA -->
   <footer style="text-align: center; padding: 2rem;">
     <p>Proyecto Universitario - Sistemas Operativos UPC</p>
   </footer>
