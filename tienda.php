@@ -8,7 +8,7 @@ require_once 'conexion.php';
 if(isset($_POST['login'])) {
     $user = $_POST['username'];
     $pass = $_POST['password'];
-    $sql = "SELECT id_cliente FROM Usuarios WHERE username='$user' AND password_hash='$pass'";
+    $sql = "SELECT id_cliente FROM usuarios WHERE username='$user' AND password_hash='$pass'";
     $resultado = $conexion->query($sql);
     
     if($resultado && $resultado->num_rows > 0) {
@@ -37,7 +37,7 @@ if(isset($_POST['btn_registrar'])) {
     $conexion->begin_transaction();
     
     try {
-        $stmt_cliente = $conexion->prepare("INSERT INTO Clientes (nombres, email, direccion_envio) VALUES (?, ?, ?)");
+        $stmt_cliente = $conexion->prepare("INSERT INTO clientes (nombres, email, direccion_envio) VALUES (?, ?, ?)");
         if (!$stmt_cliente) throw new Exception("Error al preparar Cliente: " . $conexion->error);
         
         $stmt_cliente->bind_param("sss", $nombres, $email, $direccion);
@@ -46,7 +46,7 @@ if(isset($_POST['btn_registrar'])) {
         $id_cliente_nuevo = $conexion->insert_id;
         $stmt_cliente->close();
         
-        $stmt_user = $conexion->prepare("INSERT INTO Usuarios (id_cliente, username, password_hash) VALUES (?, ?, ?)");
+        $stmt_user = $conexion->prepare("INSERT INTO usuarios (id_cliente, username, password_hash) VALUES (?, ?, ?)");
         if (!$stmt_user) throw new Exception("Error al preparar Usuario: " . $conexion->error);
         
         $stmt_user->bind_param("iss", $id_cliente_nuevo, $nuevo_user, $nueva_pass);
