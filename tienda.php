@@ -216,7 +216,11 @@ $res_catalogo = $conexion->query($query_catalogo);
 
   <!-- PIE DE PÁGINA -->
   <footer style="text-align: center; padding: 2rem;">
-    <p>Proyecto Universitario -- Sistemas Operativos UPC</p>
+    <p> @Chaska Ruway. Todos los derechos reservados </p>
   </footer>
 </body>
 </html>
+
+
+
+
