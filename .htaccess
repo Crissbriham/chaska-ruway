@@ -1,14 +1,1 @@
 DirectoryIndex index.php
-
-
-# Las carpetas internas no se pueden abrir desde el navegador
-RedirectMatch 404 /(includes|modelo|backup)/
-RedirectMatch 404 /\.git
-
-# La conexión solo la usa PHP por dentro
-<Files "conexion.php">
-    Require all denied
-</Files>
-
-# Evita que se listen los archivos de una carpeta. Si el sitio da error 500, borra esta línea.
-Options -Indexes

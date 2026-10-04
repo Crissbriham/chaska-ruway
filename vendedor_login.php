@@ -1,5 +1,4 @@
 <?php
-header('Location: login.php'); exit;  // ahora todos entran por login.php
 require_once 'includes/helpers.php';
 require_once 'modelo/vendedor.php';
 
@@ -30,20 +29,20 @@ $pagina = 'v_login';
 $es_vendedor = true;
 include 'includes/cabecera.php';
 ?>
-<div class="acceso">
+  <div class="acceso">
     <form method="post" action="vendedor_login.php" class="caja">
-        <h1>Acceso para vendedores</h1>
-        <p class="ayuda" style="margin-bottom:1.25rem">Entra con la cuenta de tu taller para ver tus pedidos y administrar tus productos.</p>
-        <div class="campo">
-            <label for="usuario">Usuario o correo</label>
-            <input type="text" id="usuario" name="usuario" value="<?= e($viejo['usuario'] ?? '') ?>" autocomplete="username" required>
-        </div>
-        <div class="campo">
-            <label for="clave">Contraseña</label>
-            <input type="password" id="clave" name="clave" autocomplete="current-password" required>
-        </div>
-        <button class="boton boton--ancho" type="submit">Entrar al panel</button>
-        <p class="cambio">¿Quieres comprar? <a href="login.php">Inicia sesión como cliente</a></p>
+      <h1>Acceso para vendedores</h1>
+      <p class="ayuda" style="margin-bottom:1.25rem">Entra con la cuenta de tu taller para ver tus pedidos y administrar tus productos.</p>
+      <div class="campo">
+        <label for="usuario">Usuario o correo</label>
+        <input type="text" id="usuario" name="usuario" value="<?= e($viejo['usuario'] ?? '') ?>" autocomplete="username" required>
+      </div>
+      <div class="campo">
+        <label for="clave">Contraseña</label>
+        <input type="password" id="clave" name="clave" autocomplete="current-password" required>
+      </div>
+      <button class="boton boton--ancho" type="submit">Entrar al panel</button>
+      <p class="cambio">¿Quieres comprar? <a href="login.php">Inicia sesión como cliente</a></p>
     </form>
-</div>
+  </div>
 <?php include 'includes/pie.php'; ?>
