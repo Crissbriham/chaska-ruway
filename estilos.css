@@ -269,3 +269,12 @@ form:has(#dir-nueva:checked) .campos-nueva { display: grid; }
 .pie .envoltura { padding-block: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 1rem; }
 .pie strong { font-family: var(--serif); color: var(--fondo); font-size: 1.25rem; }
 .pie p { margin: 0; }
+
+
+/* ---------- Buscador del catálogo ---------- */
+.buscador { margin-bottom: 1.5rem; }
+.buscador__caja { position: relative; max-width: 640px; }
+.buscador__caja input[type=search] { padding: .85rem 3.4rem .85rem 1.2rem; border-radius: 999px; font-size: 1.05rem; }
+.buscador__lupa { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%); width: 2.5rem; height: 2.5rem; border: 0; border-radius: 50%; background: var(--cochinilla); color: var(--blanco); display: grid; place-items: center; cursor: pointer; }
+.buscador__lupa:hover { background: var(--cochinilla-osc); }
+.buscador__lupa svg { width: 18px; height: 18px; }

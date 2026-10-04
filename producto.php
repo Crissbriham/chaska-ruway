@@ -86,7 +86,6 @@ include 'includes/cabecera.php';
 
         <div style="margin-top:1.5rem">
           <?php if (!$idu): ?>
-            <p class="ayuda"><a href="login.php">Inicia sesión</a> para reseñar productos que hayas comprado.</p>
           <?php elseif ($ya_reseno): ?>
             <p class="ayuda">Ya publicaste tu reseña de este producto.</p>
           <?php elseif (!$compro): ?>

@@ -96,7 +96,7 @@ function textoStock($stock) {
     $stock = (int)$stock;
     if ($stock <= 0) return '<span class="stock stock--agotado">Agotado</span>';
     if ($stock <= 5) return '<span class="stock stock--poco">Quedan ' . $stock . '</span>';
-    return '<span class="stock">Disponible</span>';
+    return '<span class="stock">' . $stock . ' disponibles</span>';
 }
 
 function tarjeta($p, $favs, $volver) {
