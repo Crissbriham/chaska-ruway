@@ -1,5 +1,5 @@
 <?php
-header('Location: login.php', true, 301); exit;   // ahora todos entran por login.php
+header('Location: login.php'); exit;  // ahora todos entran por login.php
 require_once 'includes/helpers.php';
 require_once 'modelo/vendedor.php';
 
