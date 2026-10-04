@@ -4,9 +4,7 @@ require_once 'modelo/productos.php';
 
 $q = trim($_GET['q'] ?? '');
 $orden = isset(ORDENES_CATALOGO[$_GET['orden'] ?? '']) ? $_GET['orden'] : 'valorados';
-$solo_disponibles = isset($_GET['disponibles']);
-
-$productos = obtenerCatalogo($q, $orden, $solo_disponibles);
+$productos = obtenerCatalogo($q, $orden);
 $favs = obtenerIdsFavoritos(compradorActual());
 
 $titulo_pagina = 'Chaska Ruway | Artesanía peruana';
@@ -30,7 +28,6 @@ include 'includes/cabecera.php';
           <?php endforeach; ?>
         </select>
       </div>
-      <label class="check"><input type="checkbox" name="disponibles" value="1" <?= $solo_disponibles ? 'checked' : '' ?>> Solo disponibles</label>
       <button class="boton" type="submit">Buscar</button>
     </form>
 
