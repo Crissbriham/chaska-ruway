@@ -20,7 +20,7 @@
   <div class="faja faja--fina" aria-hidden="true"></div>
   <div class="envoltura">
     <div><strong>Chaska Ruway</strong><p>Artesanía peruana, directo de quien la hace.</p></div>
-    <p>&copy; 2026 Chaska Ruway. Todos los derechos reservados</p>
+    <p>&copy; 2026 Chaska Ruway. Todos los derechos reservados.</p>
   </div>
 </footer>
 
