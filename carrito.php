@@ -1,63 +1,73 @@
 <?php
-require_once __DIR__ . '/../conexion.php';
+require_once 'includes/helpers.php';
+require_once 'modelo/carrito.php';
 
-function obtenerOCrearCarrito($conexion, $id_comprador) {
-    $sql = "SELECT id_carrito FROM Carrito WHERE id_comprador = ? AND estado = 'Activo' LIMIT 1";
-    $stmt = $conexion->prepare($sql);
-    $stmt->bind_param("i", $id_comprador);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
-    
-    if ($fila = $resultado->fetch_assoc()) {
-        return $fila['id_carrito'];
-    }
-    
-    $sqlInsert = "INSERT INTO Carrito (id_comprador, estado) VALUES (?, 'Activo')";
-    $stmtInsert = $conexion->prepare($sqlInsert);
-    $stmtInsert->bind_param("i", $id_comprador);
-    $stmtInsert->execute();
-    
-    return $conexion->insert_id;
+exigirSesion('carrito.php', 'Inicia sesión para ver tu carrito.');
+$idu = compradorActual();
+$items = obtenerItemsCarrito($idu);
+$total = 0;
+$hay_problema = false;
+foreach ($items as $it) {
+    $total += $it['precio'] * $it['cantidad'];
+    if ($it['cantidad'] > $it['stock']) $hay_problema = true;
 }
 
-function obtenerItemsCarrito($conexion, $id_carrito) {
-    $sql = "SELECT cd.*, p.nombre, p.stock, v.nombre_taller 
-            FROM Carrito_Detalle cd
-            JOIN Productos p ON cd.id_producto = p.id_producto
-            JOIN Vendedores v ON p.id_vendedor = v.id_vendedor
-            WHERE cd.id_carrito = ?";
-            
-    $stmt = $conexion->prepare($sql);
-    $stmt->bind_param("i", $id_carrito);
-    $stmt->execute();
-    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-}
+$titulo_pagina = 'Tu carrito | Chaska Ruway';
+$pagina = 'carrito';
+include 'includes/cabecera.php';
+?>
+  <h1 class="pagina-titulo">Tu carrito</h1>
+  <?php if (!$items): ?>
+    <div class="vacio">
+      <h3>Tu carrito está vacío</h3>
+      <p>Explora el catálogo y agrega las piezas que te gusten.</p>
+      <a class="boton" href="index.php#catalogo">Ver el catálogo</a>
+    </div>
+  <?php else: ?>
+    <div class="dos-columnas">
+      <ul class="lista-carrito">
+        <?php foreach ($items as $it): ?>
+          <li class="item">
+            <?= portada($it, 'portada--mini') ?>
+            <div class="item__info">
+              <a href="producto.php?id=<?= (int)$it['id_producto'] ?>"><?= e($it['nombre']) ?></a>
+              <p><?= soles($it['precio']) ?> c/u · <?= e($it['nombre_taller']) ?></p>
+              <?php if ($it['cantidad'] > $it['stock']): ?>
+                <p class="alerta-stock"><?= $it['stock'] > 0 ? 'Solo quedan ' . (int)$it['stock'] . '. Reduce la cantidad.' : 'Se agotó. Quítalo para continuar.' ?></p>
+              <?php endif; ?>
+              <form method="post" action="accion.php">
+                <input type="hidden" name="accion" value="quitar">
+                <input type="hidden" name="id_detalle" value="<?= (int)$it['id_detalle'] ?>">
+                <button class="enlace-boton" type="submit">Quitar</button>
+              </form>
+            </div>
+            <form method="post" action="accion.php" class="item__cantidad">
+              <input type="hidden" name="accion" value="cantidad">
+              <input type="hidden" name="id_detalle" value="<?= (int)$it['id_detalle'] ?>">
+              <label class="sr" for="cant<?= (int)$it['id_detalle'] ?>">Cantidad de <?= e($it['nombre']) ?></label>
+              <input type="number" id="cant<?= (int)$it['id_detalle'] ?>" name="cantidad" value="<?= (int)$it['cantidad'] ?>" min="0" max="<?= max(1, (int)$it['stock']) ?>">
+              <button class="boton boton--borde" type="submit" style="padding:.55rem .8rem">Actualizar</button>
+            </form>
+            <span class="item__subtotal"><?= soles($it['precio'] * $it['cantidad']) ?></span>
+          </li>
+        <?php endforeach; ?>
+      </ul>
 
-function agregarAlCarrito($conexion, $id_comprador, $id_producto, $cantidad) {
-    $id_carrito = obtenerOCrearCarrito($conexion, $id_comprador);
-    
-    $sqlCheck = "SELECT cantidad FROM Carrito_Detalle WHERE id_carrito = ? AND id_producto = ?";
-    $stmtCheck = $conexion->prepare($sqlCheck);
-    $stmtCheck->bind_param("ii", $id_carrito, $id_producto);
-    $stmtCheck->execute();
-    $res = $stmtCheck->get_result();
-    
-    $sqlPrecio = "SELECT precio FROM Productos WHERE id_producto = ?";
-    $stmtPrecio = $conexion->prepare($sqlPrecio);
-    $stmtPrecio->bind_param("i", $id_producto);
-    $stmtPrecio->execute();
-    $precioProd = $stmtPrecio->get_result()->fetch_assoc()['precio'];
-    
-    if ($row = $res->fetch_assoc()) {
-        $nuevaCantidad = $row['cantidad'] + $cantidad;
-        $sqlUpdate = "UPDATE Carrito_Detalle SET cantidad = ? WHERE id_carrito = ? AND id_producto = ?";
-        $stmtUp = $conexion->prepare($sqlUpdate);
-        $stmtUp->bind_param("iii", $nuevaCantidad, $id_carrito, $id_producto);
-        $stmtUp->execute();
-    } else {
-        $sqlIns = "INSERT INTO Carrito_Detalle (id_carrito, id_producto, cantidad, precio_unitario) VALUES (?, ?, ?, ?)";
-        $stmtIns = $conexion->prepare($sqlIns);
-        $stmtIns->bind_param("iiid", $id_carrito, $id_producto, $cantidad, $precioProd);
-        $stmtIns->execute();
-    }
-}
+      <aside class="caja resumen">
+        <h2>Resumen</h2>
+        <dl>
+          <dt>Productos (<?= $num_carrito ?>)</dt><dd><?= soles($total) ?></dd>
+          <dt>Envío</dt><dd>Gratis</dd>
+          <dt class="total">Total</dt><dd class="total"><?= soles($total) ?></dd>
+        </dl>
+        <?php if ($hay_problema): ?>
+          <button class="boton boton--ancho" disabled>Continuar con el pago</button>
+          <p class="nota-demo">Ajusta las cantidades marcadas para continuar.</p>
+        <?php else: ?>
+          <a class="boton boton--ancho" href="pagar.php">Continuar con el pago</a>
+        <?php endif; ?>
+        <p class="nota-demo"><a href="index.php#catalogo">Seguir comprando</a></p>
+      </aside>
+    </div>
+  <?php endif; ?>
+<?php include 'includes/pie.php'; ?>

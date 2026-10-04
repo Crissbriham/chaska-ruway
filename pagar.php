@@ -1,93 +1,113 @@
 <?php
-// pagar.php - Pantalla de confirmación y procesamiento de pago
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-require_once 'conexion.php';
 require_once 'includes/helpers.php';
 require_once 'modelo/carrito.php';
 require_once 'modelo/pedidos.php';
 
-$id_comprador_actual = isset($_SESSION['id_comprador']) ? $_SESSION['id_comprador'] : 1;
-$id_carrito = obtenerOCrearCarrito($conexion, $id_comprador_actual);
-$items = obtenerItemsCarrito($conexion, $id_carrito);
+exigirSesion('pagar.php', 'Inicia sesión para continuar con tu compra.');
+$idu = compradorActual();
 
-// Si el carrito está vacío, redirigir al catálogo
-if (empty($items)) {
-    header('Location: index.php');
-    exit;
-}
-
-$mensaje_error = '';
-$mensaje_exito = '';
-
-// Al enviar el formulario de pago
+/* Confirmar compra */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $metodo_pago = isset($_POST['metodo_pago']) ? $_POST['metodo_pago'] : 'Yape / Plin';
-    
-    // Ejecutamos el procedimiento almacenado
-    $resultado = procesarCompra($conexion, $id_carrito, $id_comprador_actual, $metodo_pago);
-    
-    if ($resultado['exito']) {
-        $mensaje_exito = $resultado['mensaje'];
-    } else {
-        $mensaje_error = $resultado['mensaje'];
+    $id_metodo = (int)($_POST['id_metodo'] ?? 0);
+    $dir = $_POST['id_direccion'] ?? '';
+    try {
+        if ($dir === 'nueva') {
+            $d = [];
+            foreach (['destinatario', 'telefono', 'departamento', 'provincia', 'distrito', 'direccion', 'referencia', 'alias'] as $c) {
+                $d[$c] = trim($_POST[$c] ?? '');
+            }
+            foreach (['destinatario', 'departamento', 'provincia', 'distrito', 'direccion'] as $c) {
+                if ($d[$c] === '') throw new RuntimeException('Completa la dirección nueva: quién recibe, departamento, provincia, distrito y dirección.');
+            }
+            $id_direccion = crearDireccion($idu, $d);
+        } else {
+            $id_direccion = (int)$dir;
+        }
+        $id_pedido = procesarCompra($idu, $id_metodo, $id_direccion);
+        avisar('Listo. Registramos tu pedido #' . $id_pedido . '.');
+        ir('pedidos.php?nuevo=' . $id_pedido);
+    } catch (RuntimeException $ex) {
+        avisar($ex->getMessage(), 'error');
+        ir('pagar.php');
     }
 }
 
+$items = obtenerItemsCarrito($idu);
+$total = 0;
+$hay_problema = false;
+foreach ($items as $it) {
+    $total += $it['precio'] * $it['cantidad'];
+    if ($it['cantidad'] > $it['stock']) $hay_problema = true;
+}
+if (!$items) { avisar('Tu carrito está vacío. Agrega productos para continuar.', 'error'); ir('carrito.php'); }
+if ($hay_problema) { avisar('Algunos productos ya no tienen stock suficiente. Ajusta las cantidades.', 'error'); ir('carrito.php'); }
+
+$direcciones = obtenerDirecciones($idu);
+$metodos = obtenerMetodosPago($idu);
+$yo = fila("SELECT nombres, apellidos, telefono FROM Compradores WHERE id_comprador = ?", "i", $idu);
+
+$titulo_pagina = 'Confirmar compra | Chaska Ruway';
+$pagina = 'pagar';
 include 'includes/cabecera.php';
 ?>
-
-<div class="seccion-pagar">
-    <h1>💳 Finalizar Compra</h1>
-
-    <?php if ($mensaje_exito): ?>
-        <div class="alerta-exito">
-            <p><?= htmlspecialchars($mensaje_exito); ?></p>
-            <p><a href="index.php" class="btn-detalles">Volver al Catálogo</a></p>
-        </div>
-    <?php else: ?>
-        <?php if ($mensaje_error): ?>
-            <div class="alerta-error">
-                <p><?= htmlspecialchars($mensaje_error); ?></p>
+  <h1 class="pagina-titulo">Confirmar compra</h1>
+  <form method="post" action="pagar.php" class="dos-columnas">
+    <div>
+      <fieldset class="grupo">
+        <legend>Dirección de envío</legend>
+        <?php foreach ($direcciones as $i => $d): ?>
+          <label class="opcion">
+            <input type="radio" name="id_direccion" value="<?= (int)$d['id_direccion'] ?>" <?= $i === 0 ? 'checked' : '' ?>>
+            <div>
+              <strong><?= e($d['alias'] ?: 'Dirección') ?></strong>
+              <span><?= e($d['destinatario']) ?>, <?= e($d['direccion']) ?>, <?= e($d['distrito']) ?>, <?= e($d['provincia']) ?>, <?= e($d['departamento']) ?></span>
             </div>
-        <?php endif; ?>
-
-        <div class="contenedor-pago-grid">
-            <div class="resumen-pago">
-                <h3>Resumen de tu pedido</h3>
-                <ul>
-                    <?php $total = 0; foreach ($items as $item): 
-                        $sub = $item['cantidad'] * $item['precio_unitario'];
-                        $total += $sub;
-                    ?>
-                        <li><?= htmlspecialchars($item['nombre']); ?> (x<?= $item['cantidad']; ?>) - <?= formatearPrecio($sub); ?></li>
-                    <?php endforeach; ?>
-                </ul>
-                <h4>Total a cancelar: <?= formatearPrecio($total); ?></h4>
-            </div>
-
-            <form action="pagar.php" method="POST" class="form-pago">
-                <h3>Selecciona tu método de pago</h3>
-                <div class="opciones-pago">
-                    <label>
-                        <input type="radio" name="metodo_pago" value="Yape / Plin" checked> Yape / Plin (Billetera Digital)
-                    </label>
-                    <label>
-                        <input type="radio" name="metodo_pago" value="Tarjeta de Crédito / Débito"> Tarjeta de Crédito / Débito
-                    </label>
-                    <label>
-                        <input type="radio" name="metodo_pago" value="Transferencia Bancaria"> Transferencia Bancaria (BCP / BBVA)
-                    </label>
-                </div>
-
-                <button type="submit" class="btn-confirmar-pago">Confirmar y Pagar</button>
-            </form>
+          </label>
+        <?php endforeach; ?>
+        <label class="opcion">
+          <input type="radio" id="dir-nueva" name="id_direccion" value="nueva" <?= !$direcciones ? 'checked' : '' ?>>
+          <div><strong>Usar una dirección nueva</strong><span>Se guardará en tu cuenta para próximas compras.</span></div>
+        </label>
+        <div class="campos-nueva">
+          <div class="campo completo"><label for="destinatario">Quién recibe</label><input type="text" id="destinatario" name="destinatario" value="<?= e(trim(($yo['nombres'] ?? '') . ' ' . ($yo['apellidos'] ?? ''))) ?>"></div>
+          <div class="campo"><label for="telefono">Teléfono</label><input type="text" id="telefono" name="telefono" value="<?= e($yo['telefono'] ?? '') ?>"></div>
+          <div class="campo"><label for="alias">Nombre de la dirección</label><input type="text" id="alias" name="alias" placeholder="Casa, oficina..."></div>
+          <div class="campo"><label for="departamento">Departamento</label><input type="text" id="departamento" name="departamento" placeholder="Lima"></div>
+          <div class="campo"><label for="provincia">Provincia</label><input type="text" id="provincia" name="provincia" placeholder="Lima"></div>
+          <div class="campo"><label for="distrito">Distrito</label><input type="text" id="distrito" name="distrito" placeholder="Miraflores"></div>
+          <div class="campo"><label for="direccion">Dirección</label><input type="text" id="direccion" name="direccion" placeholder="Av. Larco 123, dpto 401"></div>
+          <div class="campo completo"><label for="referencia">Referencia (opcional)</label><input type="text" id="referencia" name="referencia" placeholder="Frente al parque"></div>
         </div>
-    <?php endif; ?>
-</div>
+      </fieldset>
 
-<?php
-include 'includes/pie.php';
-?>
+      <fieldset class="grupo">
+        <legend>Método de pago</legend>
+        <?php foreach ($metodos as $i => $m): ?>
+          <label class="opcion">
+            <input type="radio" name="id_metodo" value="<?= (int)$m['id_metodo'] ?>" <?= $i === 0 ? 'checked' : '' ?> required>
+            <div>
+              <strong><?= e($m['nombre']) ?><?= $m['ultimos_digitos'] ? ' terminada en ' . e($m['ultimos_digitos']) : '' ?></strong>
+              <span><?= e($m['alias'] ? 'Guardado como “' . $m['alias'] . '”' : $m['descripcion']) ?></span>
+            </div>
+          </label>
+        <?php endforeach; ?>
+      </fieldset>
+    </div>
+
+    <aside class="caja resumen">
+      <h2>Tu pedido</h2>
+      <ul>
+        <?php foreach ($items as $it): ?>
+          <li><span><?= (int)$it['cantidad'] ?> × <?= e($it['nombre']) ?></span><span><?= soles($it['precio'] * $it['cantidad']) ?></span></li>
+        <?php endforeach; ?>
+      </ul>
+      <dl>
+        <dt>Envío</dt><dd>Gratis</dd>
+        <dt class="total">Total</dt><dd class="total"><?= soles($total) ?></dd>
+      </dl>
+      <button class="boton boton--ancho" type="submit">Confirmar compra por <?= soles($total) ?></button>
+      <p class="nota-demo">Proyecto universitario de demostración: no se realiza ningún cobro real.</p>
+      <p class="nota-demo"><a href="carrito.php">Volver al carrito</a></p>
+    </aside>
+  </form>
+<?php include 'includes/pie.php'; ?>

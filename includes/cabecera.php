@@ -1,38 +1,69 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+/* Cabecera común. Antes de incluirla, cada página define:
+   $titulo_pagina (texto), $pagina (clave del menú) y, si quiere portada, $hero = true */
+require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/../modelo/carrito.php';
+
+$idc = compradorActual();
+$num_carrito = $idc ? contarItemsCarrito($idc) : 0;
+$aviso = $_SESSION['aviso'] ?? null;
+unset($_SESSION['aviso']);
+$titulo_pagina = $titulo_pagina ?? 'Chaska Ruway | Artesanía peruana';
+$pagina = $pagina ?? '';
+$hero = $hero ?? false;
 ?>
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chaska Ruway - Tienda de Artesanías</title>
-    <link rel="stylesheet" href="estilos.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><?= e($titulo_pagina) ?></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,500;0,700;0,800;1,500&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-    <div class="tejido"></div>
-    <header>
-        <div class="barra" style="max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;">
-            <div class="marca">
-                <a href="index.php" style="color: white; text-decoration: none; font-size: 1.5rem; font-weight: bold;">Chaska Ruway 🎨</a>
-                <br><small style="color: #cbd5e1;">Arte y Tradición Peruana</small>
-            </div>
-            <nav>
-                <ul class="menu-horizontal" style="list-style: none; display: flex; gap: 1.5rem; margin: 0; padding: 0; align-items: center;">
-                    <li><a href="index.php" style="color: white; text-decoration: none;">Catálogo</a></li>
-                    <li><a href="carrito.php" style="color: white; text-decoration: none;">🛒 Carrito</a></li>
-                    <li><a href="pedidos.php" style="color: white; text-decoration: none;">Mis Pedidos</a></li>
-                    <?php if (isset($_SESSION['usuario'])): ?>
-                        <li><a href="vendedor/panel.php" style="color: white; text-decoration: none;">Panel Vendedor</a></li>
-                        <li><a href="logout.php" style="color: #f87171; text-decoration: none;">Cerrar Sesión</a></li>
-                    <?php else: ?>
-                        <li><a href="login.php" style="color: white; text-decoration: none;">Iniciar Sesión</a></li>
-                        <li><a href="registro.php" style="color: white; text-decoration: none; background: #e0e7ff; color: #1e1b4b; padding: 0.5rem 1rem; border-radius: 4px;">Registrarse</a></li>
-                    <?php endif; ?>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    <main style="max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem;">
+
+<header class="cabecera">
+  <div class="envoltura">
+    <a class="marca" href="index.php"><span class="marca__lucero" aria-hidden="true"></span>Chaska Ruway</a>
+    <nav class="menu" aria-label="Principal">
+      <a href="index.php#catalogo" <?= $pagina === 'catalogo' ? 'aria-current="page"' : '' ?>>Catálogo</a>
+      <?php if ($idc): ?>
+        <a href="favoritos.php" <?= $pagina === 'favoritos' ? 'aria-current="page"' : '' ?>>Favoritos</a>
+        <a href="pedidos.php" <?= $pagina === 'pedidos' ? 'aria-current="page"' : '' ?>>Mis pedidos</a>
+        <a class="carrito-enlace" href="carrito.php" <?= in_array($pagina, ['carrito', 'pagar'], true) ? 'aria-current="page"' : '' ?>>
+          Carrito <span class="contador"><?= $num_carrito ?><span class="sr"> productos</span></span>
+        </a>
+        <span class="saludo">Hola, <?= e($_SESSION['nombre']) ?></span>
+        <a href="logout.php">Salir</a>
+      <?php else: ?>
+        <a href="login.php" <?= $pagina === 'login' ? 'aria-current="page"' : '' ?>>Iniciar sesión</a>
+        <a class="boton" href="registro.php">Crear cuenta</a>
+      <?php endif; ?>
+    </nav>
+  </div>
+</header>
+
+<?php if ($hero): ?>
+<section class="hero">
+  <div class="envoltura">
+    <div>
+      <h1>Chaska Ruway</h1>
+      <p class="hero__lema">Artesanía peruana, directo de quien la hace.</p>
+      <p class="hero__quechua">En quechua, chaska es el lucero y ruway es hacer.</p>
+      <a class="boton boton--claro" href="#catalogo">Ver el catálogo</a>
+    </div>
+    <div class="lucero" aria-hidden="true"><span></span></div>
+  </div>
+</section>
+<div class="faja" aria-hidden="true"></div>
+<?php else: ?>
+<div class="faja faja--fina" aria-hidden="true"></div>
+<?php endif; ?>
+
+<main class="envoltura">
+  <?php if ($aviso): ?>
+    <div class="aviso<?= $aviso['tipo'] === 'error' ? ' aviso--error' : '' ?>" role="<?= $aviso['tipo'] === 'error' ? 'alert' : 'status' ?>"><?= e($aviso['texto']) ?></div>
+  <?php endif; ?>
