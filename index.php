@@ -3,7 +3,7 @@ require_once 'includes/helpers.php';
 require_once 'modelo/productos.php';
 
 $q = trim($_GET['q'] ?? '');
-$orden = isset(ORDENES_CATALOGO[$_GET['orden'] ?? '']) ? $_GET['orden'] : 'valorados';
+$orden = 'valorados';   // siempre se muestran primero los mejor valorados
 $regiones = obtenerRegiones();
 $region = in_array($_GET['region'] ?? '', $regiones, true) ? $_GET['region'] : '';
 
@@ -32,15 +32,6 @@ include 'includes/cabecera.php';
         <button class="buscador__lupa" type="submit" aria-label="Buscar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
         </button>
-      </div>
-      <div class="buscador__orden">
-        <label for="orden">Ordenar</label>
-        <select id="orden" name="orden" onchange="this.form.submit()">
-          <?php foreach (['valorados' => 'Mejor valorados', 'recientes' => 'Más nuevos', 'precio_asc' => 'Precio: menor a mayor', 'precio_desc' => 'Precio: mayor a menor', 'nombre' => 'Nombre (A-Z)'] as $k => $t): ?>
-            <option value="<?= $k ?>" <?= $orden === $k ? 'selected' : '' ?>><?= $t ?></option>
-          <?php endforeach; ?>
-        </select>
-      </div>
       <?php if ($region !== ''): ?><input type="hidden" name="region" value="<?= e($region) ?>"><?php endif; ?>
     </form>
 
