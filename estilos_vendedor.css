@@ -1,0 +1,23 @@
+/* Panel de vendedor: se suma a estilos.css y usa sus mismos colores y tipografías */
+.pestanas { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.5rem; }
+.pestanas a { text-decoration: none; padding: .45rem .95rem; border: 1px solid var(--linea); border-radius: 999px; background: var(--blanco); color: var(--texto); font-weight: 500; }
+.pestanas a:hover { border-color: var(--anil); color: var(--anil); }
+.pestanas a[aria-current="page"] { background: var(--noche); border-color: var(--noche); color: var(--blanco); }
+.pestanas .n { margin-left: .4rem; font-size: .9rem; color: var(--suave); }
+.pestanas a[aria-current="page"] .n { color: #C9CCE6; }
+
+.pedido__items .otro-taller { color: var(--suave); }
+.acciones-pedido { display: grid; gap: .5rem; margin: 1rem 0 0; padding-top: 1rem; border-top: 1px solid var(--linea); }
+.acciones-pedido .fila-envio { display: grid; grid-template-columns: 1fr 1fr; gap: 0 .75rem; }
+.acciones-pedido .campo { margin-bottom: .5rem; }
+.acciones-pedido .boton { justify-self: start; }
+@media (max-width: 560px) { .acciones-pedido .fila-envio { grid-template-columns: 1fr; } }
+
+.tabla-scroll { overflow-x: auto; }
+.tabla { width: 100%; border-collapse: collapse; background: var(--blanco); border: 1px solid var(--linea); }
+.tabla th, .tabla td { padding: .7rem .9rem; text-align: left; border-bottom: 1px solid var(--linea); vertical-align: middle; }
+.tabla th { font: 700 1rem var(--serif); background: var(--fondo); }
+.tabla td:first-child a { font-family: var(--serif); font-weight: 700; font-size: 1.05rem; text-decoration: none; color: var(--texto); display: block; }
+.tabla td:first-child a:hover { color: var(--cochinilla); }
+.tabla input[type=text], .tabla input[type=number] { width: 110px; }
+.fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
