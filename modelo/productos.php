@@ -56,7 +56,7 @@ function yaReseno($id_comprador, $id_producto) {
 
 function publicarResena($id_producto, $id_comprador, $id_pedido, $puntuacion, $titulo, $comentario) {
     return ejecutar("INSERT INTO Resena (id_producto, id_comprador, id_pedido, puntuacion, titulo, comentario) VALUES (?, ?, ?, ?, ?, ?)",
-        "iiiiss", $id_producto, $id_comprador, $id_pedido, $puntuacion, $titulo, $comentario);
+                    "iiiiss", $id_producto, $id_comprador, $id_pedido, $puntuacion, $titulo, $comentario);
 }
 
 /* ---------- Favoritos ---------- */

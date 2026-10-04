@@ -34,15 +34,8 @@ include 'includes/cabecera.php';
         <button class="boton" type="submit">Buscar</button>
     </form>
 
-    <?php
-    $unidades = array_sum(array_map(fn($x) => max(0, (int)$x['stock']), $productos));
-    $con_stock = count(array_filter($productos, fn($x) => (int)$x['stock'] > 0));
-    ?>
     <?php if ($q !== ''): ?>
-        <p class="resultado"><?= count($productos) ?> <?= count($productos) == 1 ? 'resultado' : 'resultados' ?> para “<?= e($q) ?>”. <a href="index.php#catalogo">Ver todo</a></p>
-    <?php endif; ?>
-    <?php if ($productos): ?>
-        <p class="resultado"><?= $con_stock ?> de <?= count($productos) ?> productos disponibles, <?= $unidades ?> unidades en total.</p>
+      <p class="resultado"><?= count($productos) ?> <?= count($productos) == 1 ? 'resultado' : 'resultados' ?> para “<?= e($q) ?>”. <a href="index.php#catalogo">Ver todo</a></p>
     <?php endif; ?>
 
     <?php if ($productos): ?>
@@ -56,5 +49,5 @@ include 'includes/cabecera.php';
             <a class="boton boton--borde" href="index.php#catalogo">Ver todo el catálogo</a>
         </div>
     <?php endif; ?>
-</section>
+  </section>
 <?php include 'includes/pie.php'; ?>

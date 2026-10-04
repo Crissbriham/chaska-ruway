@@ -129,25 +129,25 @@ include 'includes/cabecera.php';
             </div>
         </div>
 
-        <div>
-            <?php foreach ($resenas as $r): ?>
-                <article class="resena">
-                    <?= estrellas($r['puntuacion']) ?>
-                    <?php if ($r['titulo']): ?><h3><?= e($r['titulo']) ?></h3><?php endif; ?>
-                    <?php if ($r['comentario']): ?><p><?= nl2br(e($r['comentario'])) ?></p><?php endif; ?>
-                    <span class="resena__autor"><?= e($r['nombres'] . ' ' . inicial($r['apellidos']) . '.') ?>, <?= fecha($r['fecha']) ?></span>
-                </article>
-            <?php endforeach; ?>
-        </div>
+      <div>
+        <?php foreach ($resenas as $r): ?>
+          <article class="resena">
+            <?= estrellas($r['puntuacion']) ?>
+            <?php if ($r['titulo']): ?><h3><?= e($r['titulo']) ?></h3><?php endif; ?>
+            <?php if ($r['comentario']): ?><p><?= nl2br(e($r['comentario'])) ?></p><?php endif; ?>
+            <span class="resena__autor"><?= e($r['nombres'] . ' ' . inicial($r['apellidos']) . '.') ?>, <?= fecha($r['fecha']) ?></span>
+          </article>
+        <?php endforeach; ?>
+      </div>
     </section>
 
     <?php if ($relacionados): ?>
-        <section class="seccion">
-            <h2>También te puede gustar</h2>
-            <div class="rejilla">
-                <?php foreach ($relacionados as $rp) echo tarjeta($rp, $favs, paginaActual()); ?>
-            </div>
-        </section>
+      <section class="seccion">
+        <h2>También te puede gustar</h2>
+        <div class="rejilla">
+          <?php foreach ($relacionados as $rp) echo tarjeta($rp, $favs, paginaActual()); ?>
+        </div>
+      </section>
     <?php endif; ?>
-<?php endif; ?>
+  <?php endif; ?>
 <?php include 'includes/pie.php'; ?>
