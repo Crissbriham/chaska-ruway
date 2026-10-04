@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../includes/helpers.php';
 
 /* Consulta base: taller, imagen principal y promedio de reseñas */
-const SQL_PRODUCTO = "SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.stock,
+const SQL_PRODUCTO = "SELECT p.id_producto, p.id_vendedor, p.nombre, p.descripcion, p.precio, p.stock,
     v.nombre_taller, v.departamento AS region, v.descripcion AS taller_descripcion,
     (SELECT i.url FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS imagen,
     (SELECT i.alt FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS alt,
@@ -24,7 +24,7 @@ function obtenerCatalogo($q = '', $orden = 'valorados', $soloDisponibles = false
     $orden = ORDENES_CATALOGO[$orden] ?? ORDENES_CATALOGO['valorados'];
     $like = '%' . $q . '%';
     $where = " WHERE (p.nombre LIKE ? OR p.descripcion LIKE ? OR v.nombre_taller LIKE ? OR v.departamento LIKE ?)"
-           . ($soloDisponibles ? " AND p.stock > 0" : "");
+        . ($soloDisponibles ? " AND p.stock > 0" : "");
     return filas(SQL_PRODUCTO . $where . " ORDER BY " . $orden, "ssss", $like, $like, $like, $like);
 }
 
@@ -56,7 +56,7 @@ function yaReseno($id_comprador, $id_producto) {
 
 function publicarResena($id_producto, $id_comprador, $id_pedido, $puntuacion, $titulo, $comentario) {
     return ejecutar("INSERT INTO Resena (id_producto, id_comprador, id_pedido, puntuacion, titulo, comentario) VALUES (?, ?, ?, ?, ?, ?)",
-                    "iiiiss", $id_producto, $id_comprador, $id_pedido, $puntuacion, $titulo, $comentario);
+        "iiiiss", $id_producto, $id_comprador, $id_pedido, $puntuacion, $titulo, $comentario);
 }
 
 /* ---------- Favoritos ---------- */

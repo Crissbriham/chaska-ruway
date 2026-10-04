@@ -21,3 +21,25 @@
 .tabla td:first-child a:hover { color: var(--cochinilla); }
 .tabla input[type=text], .tabla input[type=number] { width: 110px; }
 .fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+
+/* ---------- Mis productos: cifras y edición ---------- */
+.encabezado-panel { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; }
+.cifras { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0 0 1.75rem; background: var(--blanco); border: 1px solid var(--linea); border-radius: 6px; }
+.cifras div { padding: .9rem 1.1rem; border-left: 1px solid var(--linea); }
+.cifras div:first-child { border-left: 0; }
+.cifras dt { color: var(--suave); font-size: .92rem; }
+.cifras dd { margin: .1rem 0 0; font: 800 1.9rem/1.1 var(--serif); color: var(--noche); }
+.cifras dd.alerta { color: var(--cochinilla); }
+@media (max-width: 640px) { .cifras { grid-template-columns: 1fr 1fr; } }
+.celda-producto { display: flex; gap: .8rem; align-items: center; }
+.celda-producto .portada--mini { width: 56px; }
+.celda-producto .portada--mini .portada__letra { font-size: 1.5rem; }
+.tabla td:last-child { white-space: nowrap; }
+.tabla td form { display: inline; }
+.boton--chico { padding: .45rem .85rem; font-size: .95rem; }
+.form-producto { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 2rem; align-items: start; }
+.form-producto__foto .portada { margin-bottom: 1rem; }
+.form-producto__foto input[type=file] { width: 100%; font: inherit; padding: .5rem; background: var(--blanco); border: 1px dashed #BEBCB2; border-radius: 4px; }
+.form-producto .check { display: flex; gap: .45rem; align-items: center; font-weight: 500; }
+.botones-form { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-top: .5rem; }
+@media (max-width: 760px) { .form-producto { grid-template-columns: 1fr; } }
