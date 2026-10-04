@@ -1,73 +1,70 @@
 <?php
-require_once 'includes/helpers.php';
-require_once 'modelo/carrito.php';
+/* Consultas SQL del carrito. Sin HTML. */
+require_once __DIR__ . '/../includes/helpers.php';
 
-exigirSesion('carrito.php', 'Inicia sesión para ver tu carrito.');
-$idu = compradorActual();
-$items = obtenerItemsCarrito($idu);
-$total = 0;
-$hay_problema = false;
-foreach ($items as $it) {
-    $total += $it['precio'] * $it['cantidad'];
-    if ($it['cantidad'] > $it['stock']) $hay_problema = true;
+/* Cada comprador tiene un solo carrito (clave única en la BD) */
+function obtenerOCrearCarrito($id_comprador, $crear = true) {
+    $f = fila("SELECT id_carrito FROM Carrito WHERE id_comprador = ?", "i", $id_comprador);
+    if ($f) return (int)$f['id_carrito'];
+    return $crear ? ejecutar("INSERT INTO Carrito (id_comprador, estado) VALUES (?, 'Activo')", "i", $id_comprador) : null;
 }
 
-$titulo_pagina = 'Tu carrito | Chaska Ruway';
-$pagina = 'carrito';
-include 'includes/cabecera.php';
-?>
-<h1 class="pagina-titulo">Tu carrito</h1>
-<?php if (!$items): ?>
-    <div class="vacio">
-        <h3>Tu carrito está vacío</h3>
-        <p>Explora el catálogo y agrega las piezas que te gusten.</p>
-        <a class="boton" href="index.php#catalogo">Ver el catálogo</a>
-    </div>
-<?php else: ?>
-    <div class="dos-columnas">
-        <ul class="lista-carrito">
-            <?php foreach ($items as $it): ?>
-                <li class="item">
-                    <?= portada($it, 'portada--mini') ?>
-                    <div class="item__info">
-                        <a href="producto.php?id=<?= (int)$it['id_producto'] ?>"><?= e($it['nombre']) ?></a>
-                        <p><?= soles($it['precio']) ?> c/u, <?= e($it['nombre_taller']) ?>. Disponibles: <?= max(0, (int)$it['stock']) ?></p>
-                        <?php if ($it['cantidad'] > $it['stock']): ?>
-                            <p class="alerta-stock"><?= $it['stock'] > 0 ? 'Solo quedan ' . (int)$it['stock'] . '. Reduce la cantidad.' : 'Se agotó. Quítalo para continuar.' ?></p>
-                        <?php endif; ?>
-                        <form method="post" action="accion.php">
-                            <input type="hidden" name="accion" value="quitar">
-                            <input type="hidden" name="id_detalle" value="<?= (int)$it['id_detalle'] ?>">
-                            <button class="enlace-boton" type="submit">Quitar</button>
-                        </form>
-                    </div>
-                    <form method="post" action="accion.php" class="item__cantidad">
-                        <input type="hidden" name="accion" value="cantidad">
-                        <input type="hidden" name="id_detalle" value="<?= (int)$it['id_detalle'] ?>">
-                        <label class="sr" for="cant<?= (int)$it['id_detalle'] ?>">Cantidad de <?= e($it['nombre']) ?></label>
-                        <input type="number" id="cant<?= (int)$it['id_detalle'] ?>" name="cantidad" value="<?= (int)$it['cantidad'] ?>" min="0" max="<?= max(1, (int)$it['stock']) ?>">
-                        <button class="boton boton--borde" type="submit" style="padding:.55rem .8rem">Actualizar</button>
-                    </form>
-                    <span class="item__subtotal"><?= soles($it['precio'] * $it['cantidad']) ?></span>
-                </li>
-            <?php endforeach; ?>
-        </ul>
+function obtenerItemsCarrito($id_comprador) {
+    $idc = obtenerOCrearCarrito($id_comprador, false);
+    if (!$idc) return [];
+    return filas("SELECT cd.id_detalle, cd.cantidad, p.id_producto, p.nombre, p.precio, p.stock, v.nombre_taller,
+        (SELECT i.url FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS imagen,
+        (SELECT i.alt FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS alt
+        FROM Carrito_Detalle cd
+        JOIN Productos p ON p.id_producto = cd.id_producto
+        JOIN Vendedores v ON v.id_vendedor = p.id_vendedor
+        WHERE cd.id_carrito = ? ORDER BY cd.id_detalle", "i", $idc);
+}
 
-        <aside class="caja resumen">
-            <h2>Resumen</h2>
-            <dl>
-                <dt>Productos (<?= $num_carrito ?>)</dt><dd><?= soles($total) ?></dd>
-                <dt>Envío</dt><dd>Gratis</dd>
-                <dt class="total">Total</dt><dd class="total"><?= soles($total) ?></dd>
-            </dl>
-            <?php if ($hay_problema): ?>
-                <button class="boton boton--ancho" disabled>Continuar con el pago</button>
-                <p class="nota-demo">Ajusta las cantidades marcadas para continuar.</p>
-            <?php else: ?>
-                <a class="boton boton--ancho" href="pagar.php">Continuar con el pago</a>
-            <?php endif; ?>
-            <p class="nota-demo"><a href="index.php#catalogo">Seguir comprando</a></p>
-        </aside>
-    </div>
-<?php endif; ?>
-<?php include 'includes/pie.php'; ?>
+function contarItemsCarrito($id_comprador) {
+    $f = fila("SELECT COALESCE(SUM(cd.cantidad), 0) AS n FROM Carrito_Detalle cd
+               JOIN Carrito c ON c.id_carrito = cd.id_carrito WHERE c.id_comprador = ?", "i", $id_comprador);
+    return (int)$f['n'];
+}
+
+/* Agrega al carrito sin pasar del stock. Devuelve ['ok'=>bool, 'mensaje'=>texto] */
+function agregarAlCarrito($id_comprador, $id_producto, $cantidad) {
+    $prod = fila("SELECT nombre, precio, stock FROM Productos WHERE id_producto = ?", "i", $id_producto);
+    if (!$prod) return ['ok' => false, 'mensaje' => 'Ese producto ya no existe.'];
+
+    $idc = obtenerOCrearCarrito($id_comprador);
+    $actual = fila("SELECT id_detalle, cantidad FROM Carrito_Detalle WHERE id_carrito = ? AND id_producto = ?", "ii", $idc, $id_producto);
+    $ya = $actual ? (int)$actual['cantidad'] : 0;
+    $nueva = min($ya + $cantidad, (int)$prod['stock']);
+
+    if ($nueva <= $ya) {
+        return ['ok' => false, 'ya' => $ya, 'mensaje' => $ya > 0
+            ? 'Ya tienes en tu carrito todas las unidades disponibles de ' . $prod['nombre'] . '.'
+            : $prod['nombre'] . ' está agotado.'];
+    }
+
+    if ($actual) {
+        ejecutar("UPDATE Carrito_Detalle SET cantidad = ?, precio_unitario = ? WHERE id_detalle = ?", "idi", $nueva, $prod['precio'], $actual['id_detalle']);
+    } else {
+        ejecutar("INSERT INTO Carrito_Detalle (id_carrito, id_producto, cantidad, precio_unitario) VALUES (?, ?, ?, ?)", "iiid", $idc, $id_producto, $nueva, $prod['precio']);
+    }
+    $msg = $prod['nombre'] . ' está en tu carrito.';
+    if ($nueva < $ya + $cantidad) $msg .= ' Solo había ' . $prod['stock'] . ' unidades disponibles.';
+    return ['ok' => true, 'mensaje' => $msg];
+}
+
+/* Cambia la cantidad (o quita si es 0). Solo toca líneas del propio comprador. */
+function cambiarCantidad($id_comprador, $id_detalle, $cantidad) {
+    $item = fila("SELECT cd.id_detalle, p.stock, p.nombre FROM Carrito_Detalle cd
+                  JOIN Carrito c ON c.id_carrito = cd.id_carrito
+                  JOIN Productos p ON p.id_producto = cd.id_producto
+                  WHERE cd.id_detalle = ? AND c.id_comprador = ?", "ii", $id_detalle, $id_comprador);
+    if (!$item) return 'No encontramos ese producto en tu carrito.';
+    if ($cantidad <= 0) {
+        ejecutar("DELETE FROM Carrito_Detalle WHERE id_detalle = ?", "i", $id_detalle);
+        return 'Quitaste ' . $item['nombre'] . ' de tu carrito.';
+    }
+    $cantidad = min($cantidad, max(1, (int)$item['stock']));
+    ejecutar("UPDATE Carrito_Detalle SET cantidad = ? WHERE id_detalle = ?", "ii", $cantidad, $id_detalle);
+    return 'Cantidad actualizada.';
+}
