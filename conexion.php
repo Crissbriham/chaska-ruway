@@ -5,8 +5,10 @@ $password = "Chaska2026!";
 $base_datos = "tienda_artesanias";
 
 $conexion = new mysqli($servidor, $usuario, $password, $base_datos);
-$conexion->set_charset('utf8mb4');
+
 if ($conexion->connect_error) {
     die("<h1 style='color:red;'>Error de conexión: " . $conexion->connect_error . "</h1>");
 }
+
+$conexion->set_charset('utf8mb4');
 ?>
