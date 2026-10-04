@@ -8,12 +8,13 @@ require_once 'conexion.php';
 if(isset($_POST['login'])) {
     $user = $_POST['username'];
     $pass = $_POST['password'];
-    $sql = "SELECT id_cliente FROM usuarios WHERE username='$user' AND password_hash='$pass'";
+    $sql = "SELECT id_usuario, username FROM Usuarios WHERE username='$user' AND password_hash='$pass'";
     $resultado = $conexion->query($sql);
     
     if($resultado && $resultado->num_rows > 0) {
-        $_SESSION['id_cliente'] = $resultado->fetch_assoc()['id_cliente'];
-        $_SESSION['nombre'] = $user;
+        $datos_usuario = $resultado->fetch_assoc();
+        $_SESSION['id_cliente'] = $datos_usuario['id_usuario'];
+        $_SESSION['nombre'] = $datos_usuario['username'];
     } else {
         $error_login = "Usuario o clave incorrecta";
     }
@@ -29,35 +30,20 @@ if(isset($_GET['logout'])) {
 if(isset($_POST['btn_registrar'])) {
     $nombres = $_POST['nombres'];
     $email = $_POST['email'];
-    $direccion = $_POST['direccion_envio'];
-    
     $nuevo_user = $_POST['nuevo_user'];
     $nueva_pass = $_POST['password_reg'];
     
-    $conexion->begin_transaction();
-    
     try {
-        $stmt_cliente = $conexion->prepare("INSERT INTO clientes (nombres, email, direccion_envio) VALUES (?, ?, ?)");
-        if (!$stmt_cliente) throw new Exception("Error al preparar Cliente: " . $conexion->error);
-        
-        $stmt_cliente->bind_param("sss", $nombres, $email, $direccion);
-        $stmt_cliente->execute();
-        
-        $id_cliente_nuevo = $conexion->insert_id;
-        $stmt_cliente->close();
-        
-        $stmt_user = $conexion->prepare("INSERT INTO usuarios (id_cliente, username, password_hash) VALUES (?, ?, ?)");
+        $stmt_user = $conexion->prepare("INSERT INTO Usuarios (username, email, password_hash, rol, nombres, estado) VALUES (?, ?, ?, 'comprador', ?, 1)");
         if (!$stmt_user) throw new Exception("Error al preparar Usuario: " . $conexion->error);
         
-        $stmt_user->bind_param("iss", $id_cliente_nuevo, $nuevo_user, $nueva_pass);
+        $stmt_user->bind_param("ssss", $nuevo_user, $email, $nueva_pass, $nombres);
         $stmt_user->execute();
         $stmt_user->close();
         
-        $conexion->commit();
         $msg_registro = "<div class='alerta'>¡Registro exitoso! Ya puedes iniciar sesión.</div>";
         
     } catch (Exception $e) {
-        $conexion->rollback();
         $msg_registro = "<div class='alerta error' style='font-size: 0.9rem;'>" . $e->getMessage() . "</div>";
     }
 }
@@ -69,19 +55,21 @@ if(isset($_POST['comprar']) && isset($_SESSION['id_cliente'])) {
     $cantidad = 1; 
     
     $stmt = $conexion->prepare("CALL ProcesarCompraDirecta(?, ?, ?)");
-    $stmt->bind_param("iii", $id_cliente, $id_producto, $cantidad);
-    
-    if($stmt->execute()) {
-        $msg_compra = "<div class='alerta'>¡Éxito! Compra procesada por Stored Procedure. Stock descontado.</div>";
+    if ($stmt) {
+        $stmt->bind_param("iii", $id_cliente, $id_producto, $cantidad);
+        if($stmt->execute()) {
+            $msg_compra = "<div class='alerta'>¡Éxito! Compra procesada. Stock descontado.</div>";
+        }
+        $stmt->close();
+    } else {
+        $msg_compra = "<div class='alerta error'>Error al procesar compra: " . $conexion->error . "</div>";
     }
-    $stmt->close();
 }
 
-// 5. CONSULTAR TODO EL CATÁLOGO
-$query_catalogo = "SELECT p.id_producto, p.nombre, p.precio, p.stock, c.nombre AS categoria, a.nombre_completo AS artesano, a.region_origen AS region 
-                   FROM productos p 
-                   JOIN categorias c ON p.id_categoria = c.id_categoria 
-                   JOIN artesanos a ON p.id_artesano = a.id_artesano";
+// 5. CONSULTAR TODO EL CATÁLOGO (Adaptado a la nueva estructura de Productos e Imagen_Producto)
+$query_catalogo = "SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.stock, img.url AS imagen 
+                   FROM Productos p 
+                   LEFT JOIN Imagen_Producto img ON p.id_producto = img.id_producto AND img.principal = 1";
 $res_catalogo = $conexion->query($query_catalogo); 
 ?>
 
@@ -115,7 +103,7 @@ $res_catalogo = $conexion->query($query_catalogo);
 
   <?php if(isset($_GET['producto'])): 
     $id_prod = (int)$_GET['producto'];
-    $res_detalle = $conexion->query("SELECT p.id_producto, p.nombre, p.precio, p.stock, c.nombre AS categoria, a.nombre_completo AS artesano, a.region_origen AS region FROM productos p JOIN categorias c ON p.id_categoria = c.id_categoria JOIN artesanos a ON p.id_artesano = a.id_artesano WHERE p.id_producto = $id_prod");
+    $res_detalle = $conexion->query("SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.stock FROM Productos p WHERE p.id_producto = $id_prod");
     $detalle = $res_detalle ? $res_detalle->fetch_assoc() : null;
   ?>
   <main>
@@ -128,9 +116,8 @@ $res_catalogo = $conexion->query($query_catalogo);
       <div class="detalle">
         <div class="foto">📦</div>
         <div>
-          <p><strong><?php echo htmlspecialchars($detalle['categoria']); ?></strong></p>
           <h1><?php echo htmlspecialchars($detalle['nombre']); ?></h1>
-          <p>Hecho por <strong><?php echo htmlspecialchars($detalle['artesano']); ?></strong>, <?php echo htmlspecialchars($detalle['region']); ?></p>
+          <p><?php echo htmlspecialchars($detalle['descripcion']); ?></p>
           <span class="precio">S/ <?php echo $detalle['precio']; ?></span>
           
           <dl class="ficha">
@@ -184,9 +171,6 @@ $res_catalogo = $conexion->query($query_catalogo);
               <label>Correo Electrónico</label>
               <input type="email" name="email" placeholder="juan@correo.com" required>
               
-              <label>Dirección de Envío (Opcional)</label>
-              <input type="text" name="direccion_envio" placeholder="Av. Los Incas 123">
-              
               <hr style="border: 0; border-top: 1px solid var(--linea); margin: 20px 0;">
               
               <label>Nombre de Usuario</label>
@@ -231,10 +215,10 @@ $res_catalogo = $conexion->query($query_catalogo);
             while($prod = $res_catalogo->fetch_assoc()): ?>
               <li>
                 <a class="tarjeta" href="?producto=<?php echo $prod['id_producto']; ?>">
-                  <div class="foto">📦<span class="chip"><?php echo htmlspecialchars($prod['categoria']); ?></span></div>
+                  <div class="foto">📦</div>
                   <div class="cuerpo">
                     <h3><?php echo htmlspecialchars($prod['nombre']); ?></h3>
-                    <p class="autor"><?php echo htmlspecialchars($prod['artesano']); ?> · <?php echo htmlspecialchars($prod['region']); ?></p>
+                    <p class="autor"><?php echo htmlspecialchars($prod['descripcion']); ?></p>
                     <span class="precio">S/ <?php echo $prod['precio']; ?></span>
                     <span>Stock: <?php echo $prod['stock']; ?></span>
                   </div>
