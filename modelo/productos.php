@@ -31,6 +31,7 @@ function obtenerCatalogo($q = '', $orden = 'valorados', $soloDisponibles = false
     return filas(SQL_PRODUCTO . " WHERE " . implode(' AND ', $donde) . " ORDER BY " . $orden, $tipos, ...$params);
 }
 
+
 /* Regiones que tienen productos, para los filtros del catálogo */
 function obtenerRegiones() {
     return array_column(filas("SELECT DISTINCT v.departamento FROM Vendedores v
