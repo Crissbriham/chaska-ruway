@@ -3,7 +3,10 @@ require_once 'includes/helpers.php';
 require_once 'modelo/productos.php';
 
 $q = trim($_GET['q'] ?? '');
-$productos = obtenerCatalogo($q);   // siempre ordenado por mejor valorados
+$orden = isset(ORDENES_CATALOGO[$_GET['orden'] ?? '']) ? $_GET['orden'] : 'valorados';
+$solo_disponibles = isset($_GET['disponibles']);
+
+$productos = obtenerCatalogo($q, $orden, $solo_disponibles);
 $favs = obtenerIdsFavoritos(compradorActual());
 
 $titulo_pagina = 'Chaska Ruway | Artesanía peruana';
@@ -14,15 +17,21 @@ include 'includes/cabecera.php';
 ?>
   <section id="catalogo" class="seccion">
     <h2>Catálogo</h2>
-
-    <form class="buscador" method="get" action="index.php#catalogo" role="search">
-      <div class="buscador__caja">
-        <label class="sr" for="q">Buscar productos</label>
-        <input type="search" id="q" name="q" value="<?= e($q) ?>" placeholder="Busca por producto, taller o región...">
-        <button class="buscador__lupa" type="submit" aria-label="Buscar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
-        </button>
+    <form class="barra-catalogo" method="get" action="index.php#catalogo" role="search">
+      <div class="campo">
+        <label for="q">Buscar</label>
+        <input type="search" id="q" name="q" value="<?= e($q) ?>" placeholder="Retablo, alpaca, Chulucanas...">
       </div>
+      <div class="campo campo--orden">
+        <label for="orden">Ordenar por</label>
+        <select id="orden" name="orden">
+          <?php foreach (['valorados' => 'Mejor valorados', 'recientes' => 'Más nuevos', 'precio_asc' => 'Precio: menor a mayor', 'precio_desc' => 'Precio: mayor a menor', 'nombre' => 'Nombre (A-Z)'] as $k => $t): ?>
+            <option value="<?= $k ?>" <?= $orden === $k ? 'selected' : '' ?>><?= $t ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <label class="check"><input type="checkbox" name="disponibles" value="1" <?= $solo_disponibles ? 'checked' : '' ?>> Solo disponibles</label>
+      <button class="boton" type="submit">Buscar</button>
     </form>
 
     <?php if ($q !== ''): ?>
@@ -36,7 +45,7 @@ include 'includes/cabecera.php';
     <?php else: ?>
       <div class="vacio">
         <h3>No hay productos que coincidan</h3>
-        <p>Prueba con otra palabra, como “cerámica” o el nombre de una región.</p>
+        <p>Prueba con otra palabra, como “cerámica” o el nombre de una región, o quita el filtro de disponibles.</p>
         <a class="boton boton--borde" href="index.php#catalogo">Ver todo el catálogo</a>
       </div>
     <?php endif; ?>

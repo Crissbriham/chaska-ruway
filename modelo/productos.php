@@ -20,9 +20,10 @@ const ORDENES_CATALOGO = [
     'nombre'      => 'p.nombre ASC',
 ];
 
-function obtenerCatalogo($q = '', $orden = 'valorados', $soloDisponibles = false, $region = '') {
+function obtenerCatalogo($q = '', $orden = 'valorados', $soloDisponibles = false) {
     $orden = ORDENES_CATALOGO[$orden] ?? ORDENES_CATALOGO['valorados'];
     $like = '%' . $q . '%';
+<<<<<<< HEAD
     $donde = ["(p.nombre LIKE ? OR p.descripcion LIKE ? OR v.nombre_taller LIKE ? OR v.departamento LIKE ?)"];
     $tipos = 'ssss';
     $params = [$like, $like, $like, $like];
@@ -36,6 +37,11 @@ function obtenerCatalogo($q = '', $orden = 'valorados', $soloDisponibles = false
 function obtenerRegiones() {
     return array_column(filas("SELECT DISTINCT v.departamento FROM Vendedores v
                                JOIN Productos p ON p.id_vendedor = v.id_vendedor ORDER BY v.departamento"), 'departamento');
+=======
+    $where = " WHERE (p.nombre LIKE ? OR p.descripcion LIKE ? OR v.nombre_taller LIKE ? OR v.departamento LIKE ?)"
+           . ($soloDisponibles ? " AND p.stock > 0" : "");
+    return filas(SQL_PRODUCTO . $where . " ORDER BY " . $orden, "ssss", $like, $like, $like, $like);
+>>>>>>> 11ddfa8aee722adfec1e6eddd73f3179ad76bf82
 }
 
 function obtenerProductoPorId($id) {

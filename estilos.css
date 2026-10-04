@@ -269,18 +269,3 @@ form:has(#dir-nueva:checked) .campos-nueva { display: grid; }
 .pie .envoltura { padding-block: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 1rem; }
 .pie strong { font-family: var(--serif); color: var(--fondo); font-size: 1.25rem; }
 .pie p { margin: 0; }
-
-/* ---------- Buscador y filtros del catálogo (pegar al final de estilos.css) ---------- */
-.buscador { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: center; margin-bottom: 1rem; }
-.buscador__caja { position: relative; flex: 1 1 320px; }
-.buscador__caja input[type=search] { padding: .85rem 3.4rem .85rem 1.2rem; border-radius: 999px; font-size: 1.05rem; background: var(--blanco); }
-.buscador__lupa { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%); width: 2.5rem; height: 2.5rem; border: 0; border-radius: 50%; background: var(--cochinilla); color: var(--blanco); display: grid; place-items: center; cursor: pointer; }
-.buscador__lupa:hover { background: var(--cochinilla-osc); }
-.buscador__lupa svg { width: 18px; height: 18px; }
-.buscador__orden { display: flex; align-items: center; gap: .5rem; }
-.buscador__orden label { margin: 0; color: var(--suave); font-weight: 500; white-space: nowrap; }
-.buscador__orden select { width: auto; border-radius: 999px; padding: .7rem 1rem; }
-.regiones { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.75rem; }
-.regiones a { text-decoration: none; padding: .4rem .95rem; border: 1px solid var(--linea); border-radius: 999px; background: var(--blanco); color: var(--texto); font-weight: 500; }
-.regiones a:hover { border-color: var(--anil); color: var(--anil); }
-.regiones a[aria-current="true"] { background: var(--noche); border-color: var(--noche); color: var(--blanco); }
