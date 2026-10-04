@@ -3,22 +3,12 @@ require_once 'includes/helpers.php';
 require_once 'modelo/productos.php';
 
 $q = trim($_GET['q'] ?? '');
-$orden = 'valorados';   // siempre se muestran primero los mejor valorados
-$regiones = obtenerRegiones();
-$region = in_array($_GET['region'] ?? '', $regiones, true) ? $_GET['region'] : '';
-
-$productos = obtenerCatalogo($q, $orden, false, $region);
+$productos = obtenerCatalogo($q);   // siempre ordenado por mejor valorados
 $favs = obtenerIdsFavoritos(compradorActual());
-
-/* Enlace de una región conservando la búsqueda y el orden */
-function enlaceRegion($reg, $q, $orden) {
-    $par = array_filter(['q' => $q, 'orden' => $orden !== 'valorados' ? $orden : '', 'region' => $reg], fn($v) => $v !== '');
-    return 'index.php' . ($par ? '?' . http_build_query($par) : '') . '#catalogo';
-}
 
 $titulo_pagina = 'Chaska Ruway | Artesanía peruana';
 $pagina = 'catalogo';
-$hero = ($q === '' && $region === '');
+$hero = ($q === '');
 $nosotros = true;
 include 'includes/cabecera.php';
 ?>
@@ -32,20 +22,11 @@ include 'includes/cabecera.php';
         <button class="buscador__lupa" type="submit" aria-label="Buscar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
         </button>
-      <?php if ($region !== ''): ?><input type="hidden" name="region" value="<?= e($region) ?>"><?php endif; ?>
+      </div>
     </form>
 
-    <?php if ($regiones): ?>
-      <nav class="regiones" aria-label="Filtrar por región">
-        <a href="<?= e(enlaceRegion('', $q, $orden)) ?>" <?= $region === '' ? 'aria-current="true"' : '' ?>>Todas</a>
-        <?php foreach ($regiones as $r): ?>
-          <a href="<?= e(enlaceRegion($r, $q, $orden)) ?>" <?= $region === $r ? 'aria-current="true"' : '' ?>><?= e($r) ?></a>
-        <?php endforeach; ?>
-      </nav>
-    <?php endif; ?>
-
-    <?php if ($q !== '' || $region !== ''): ?>
-      <p class="resultado"><?= count($productos) ?> <?= count($productos) == 1 ? 'resultado' : 'resultados' ?><?= $q !== '' ? ' para “' . e($q) . '”' : '' ?><?= $region !== '' ? ' en ' . e($region) : '' ?>. <a href="index.php#catalogo">Ver todo</a></p>
+    <?php if ($q !== ''): ?>
+      <p class="resultado"><?= count($productos) ?> <?= count($productos) == 1 ? 'resultado' : 'resultados' ?> para “<?= e($q) ?>”. <a href="index.php#catalogo">Ver todo</a></p>
     <?php endif; ?>
 
     <?php if ($productos): ?>
