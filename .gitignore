@@ -7,3 +7,4 @@ backup/
 # Fotos que suben los vendedores (se quedan en el servidor)
 img/productos/*
 !img/productos/.htaccess
+git
