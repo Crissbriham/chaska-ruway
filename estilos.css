@@ -439,3 +439,19 @@ body {
 .pie .pie__marca strong { font-size: 1.6rem; display: block; margin-bottom: .35rem; }
 .pie .pie__base { border-top: 1px solid rgba(201,204,230,.18); padding-block: 1rem 1.5rem; font-size: .92rem; }
 @media (max-width: 760px) { .pie .pie__columnas { grid-template-columns: 1fr; } }
+
+/* ---------- Crear cuenta: elegir comprador o artesano ---------- */
+.acceso--ancho { max-width: 560px; }
+.rol { border: 0; padding: 0; margin: 0 0 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.rol legend { font-weight: 700; font-size: .95rem; margin-bottom: .5rem; padding: 0; }
+.rol .opcion { margin: 0; }
+/* Los datos del taller solo se ven si eligió "Vender mis productos" */
+.solo-vendedor { display: none; padding: 1rem 1rem .25rem; margin: 0 0 1rem; background: var(--fondo); border-left: 4px solid var(--qolle); border-radius: 0 4px 4px 0; }
+form:has(#rol-vendedor:checked) .solo-vendedor,
+form.es-vendedor .solo-vendedor { display: block; }
+@media (max-width: 480px) { .rol { grid-template-columns: 1fr; } }
+
+/* ---------- Unidades disponibles y marca "Tu producto" ---------- */
+.disponibles { margin: .25rem 0 .5rem; color: var(--suave); }
+.disponibles strong { color: var(--ok); font-size: 1.15rem; }
+.tarjeta__mio { position: absolute; top: .7rem; right: .7rem; background: var(--qolle); color: var(--noche); font-weight: 700; font-size: .82rem; padding: .2rem .6rem; border-radius: 999px; }

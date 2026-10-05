@@ -124,4 +124,13 @@ include 'includes/cabecera.php';
       <p class="cambio">¿Ya tienes cuenta? <a href="login.php">Inicia sesión</a></p>
     </form>
   </div>
+  <script>
+    /* Respaldo para navegadores antiguos: muestra los datos del taller solo si eligió vender */
+    (function () {
+      var form = document.getElementById('rol-vendedor').form;
+      function actualizar() { form.classList.toggle('es-vendedor', document.getElementById('rol-vendedor').checked); }
+      document.querySelectorAll('input[name="rol"]').forEach(function (r) { r.addEventListener('change', actualizar); });
+      actualizar();
+    })();
+  </script>
 <?php include 'includes/pie.php'; ?>
