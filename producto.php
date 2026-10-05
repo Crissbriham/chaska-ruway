@@ -6,6 +6,7 @@ require_once 'modelo/carrito.php';
 $id = (int)($_GET['id'] ?? 0);
 $p = obtenerProductoPorId($id);
 $idu = compradorActual();
+$idv = vendedorActual();
 $favs = obtenerIdsFavoritos($idu);
 
 if ($p) {
@@ -40,10 +41,18 @@ include 'includes/cabecera.php';
         <a href="#resenas" style="text-decoration:none"><?= estrellas($p['promedio'], (int)$p['num_resenas']) ?></a>
         <span class="precio"><?= soles($p['precio']) ?></span>
         <p class="detalle__desc"><?= e($p['descripcion']) ?></p>
-        <?= textoStock($p['stock']) ?>
+        <p class="disponibles"><?= (int)$p['stock'] > 0
+            ? '<strong>' . (int)$p['stock'] . '</strong> ' . ((int)$p['stock'] === 1 ? 'unidad disponible' : 'unidades disponibles')
+            : '<span class="stock stock--agotado">Agotado por ahora</span>' ?></p>
         <?php if ($en_carrito): ?><span class="nota">Tienes <?= $en_carrito ?> en tu carrito.</span><?php endif; ?>
 
-        <?php if ($p['stock'] > 0): ?>
+        <?php if ($idv): /* cuenta de vendedor: no compra */ ?>
+          <?php if ((int)$p['id_vendedor'] === (int)$idv): ?>
+            <div class="comprar"><a class="boton" style="grid-column:1/-1" href="vendedor_producto.php?id=<?= (int)$p['id_producto'] ?>">Editar este producto</a></div>
+          <?php else: ?>
+            <p class="ayuda">Estás viendo la tienda con tu cuenta de vendedor.</p>
+          <?php endif; ?>
+        <?php elseif ($p['stock'] > 0): ?>
           <form method="post" action="accion.php" class="comprar">
             <input type="hidden" name="accion" value="agregar">
             <input type="hidden" name="id_producto" value="<?= (int)$p['id_producto'] ?>">
@@ -58,12 +67,14 @@ include 'includes/cabecera.php';
           <div class="comprar"><button class="boton" disabled style="grid-column:1/-1">Agotado</button></div>
         <?php endif; ?>
 
+        <?php if (!$idv): ?>
         <form method="post" action="accion.php" class="detalle__extra">
           <input type="hidden" name="accion" value="favorito">
           <input type="hidden" name="id_producto" value="<?= (int)$p['id_producto'] ?>">
           <input type="hidden" name="volver" value="<?= e(paginaActual()) ?>">
           <button class="enlace-boton" type="submit"><?= in_array((int)$p['id_producto'], $favs, true) ? '♥ Quitar de favoritos' : '♡ Guardar en favoritos' ?></button>
         </form>
+        <?php endif; ?>
 
         <div class="garantias">
           <span><strong>Envío gratis</strong> a todo el Perú.</span>
@@ -85,7 +96,9 @@ include 'includes/cabecera.php';
         <?php endif; ?>
 
         <div style="margin-top:1.5rem">
-          <?php if (!$idu): ?>
+          <?php if ($idv): ?>
+            <p class="ayuda">Las reseñas las escriben los compradores.</p>
+          <?php elseif (!$idu): ?>
           <?php elseif ($ya_reseno): ?>
             <p class="ayuda">Ya publicaste tu reseña de este producto.</p>
           <?php elseif (!$compro): ?>

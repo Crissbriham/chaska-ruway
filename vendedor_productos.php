@@ -4,13 +4,23 @@ require_once 'modelo/vendedor.php';
 
 exigirVendedor();
 $productos = obtenerProductosVendedor(vendedorActual());
+$cifras = resumenProductosVendedor(vendedorActual());
 
 $titulo_pagina = 'Mis productos | Chaska Ruway';
 $pagina = 'v_productos';
 $es_vendedor = true;
 include 'includes/cabecera.php';
 ?>
-  <h1 class="pagina-titulo">Productos de <?= e($_SESSION['taller']) ?></h1>
+  <div class="encabezado-panel">
+    <h1 class="pagina-titulo">Productos de <?= e($_SESSION['taller']) ?></h1>
+    <a class="boton" href="vendedor_producto.php">Agregar producto</a>
+  </div>
+  <dl class="cifras">
+    <div><dt>Productos</dt><dd><?= $cifras['productos'] ?></dd></div>
+    <div><dt>Unidades disponibles</dt><dd><?= $cifras['unidades'] ?></dd></div>
+    <div><dt>Con pocas unidades</dt><dd class="<?= $cifras['pocos'] ? 'alerta' : '' ?>"><?= $cifras['pocos'] ?></dd></div>
+    <div><dt>Agotados</dt><dd class="<?= $cifras['agotados'] ? 'alerta' : '' ?>"><?= $cifras['agotados'] ?></dd></div>
+  </dl>
 
   <?php if (!$productos): ?>
     <div class="vacio"><h3>Aún no tienes productos</h3><p>Agrega el primero con el formulario de abajo.</p></div>
@@ -22,8 +32,13 @@ include 'includes/cabecera.php';
           <?php foreach ($productos as $p): $f = 'f' . (int)$p['id_producto']; ?>
             <tr>
               <td>
-                <a href="producto.php?id=<?= (int)$p['id_producto'] ?>"><?= e($p['nombre']) ?></a>
-                <?= textoStock($p['stock']) ?>
+                <div class="celda-producto">
+                  <?= portada($p, 'portada--mini') ?>
+                  <div>
+                    <a href="vendedor_producto.php?id=<?= (int)$p['id_producto'] ?>"><?= e($p['nombre']) ?></a>
+                    <?= textoStock($p['stock']) ?>
+                  </div>
+                </div>
               </td>
               <td>
                 <label class="sr" for="precio<?= (int)$p['id_producto'] ?>">Precio de <?= e($p['nombre']) ?></label>
@@ -40,6 +55,7 @@ include 'includes/cabecera.php';
                   <input type="hidden" name="volver" value="vendedor_productos.php">
                   <button class="boton boton--borde" type="submit" style="padding:.5rem .9rem">Guardar</button>
                 </form>
+                <a class="boton boton--borde boton--chico" href="vendedor_producto.php?id=<?= (int)$p['id_producto'] ?>">Editar</a>
               </td>
             </tr>
           <?php endforeach; ?>

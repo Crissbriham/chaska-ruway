@@ -1,0 +1,10 @@
+# Datos de conexión: nunca se suben a GitHub
+conexion.php
+
+# Copias viejas
+backup/
+
+# Fotos que suben los vendedores (se quedan en el servidor)
+imagenes/productos/*
+!imagenes/productos/.htaccess
+.idea/

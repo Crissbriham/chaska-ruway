@@ -4,7 +4,7 @@
 <section id="nosotros" class="nosotros">
   <div class="envoltura">
     <div>
-      <h2>¿Quiénes somos?</h2>
+      <h2 class="titulo-tejido">¿Quiénes somos?</h2>
       <p>Somos una plataforma digital que conecta a maestros artesanos de todas las regiones del Perú directamente con quienes valoran su trabajo. Cada pieza llega con el nombre del taller o la comunidad que la hizo.</p>
     </div>
     <dl>
@@ -18,8 +18,35 @@
 
 <footer class="pie">
   <div class="faja faja--fina" aria-hidden="true"></div>
-  <div class="envoltura">
-    <div><strong>Chaska Ruway</strong><p>Artesanía peruana, directo de quien la hace.</p></div>
+  <div class="envoltura pie__columnas">
+    <div class="pie__marca">
+      <strong>Chaska Ruway</strong>
+      <p>Artesanía peruana, directo de quien la hace. Cada pieza llega con el nombre del taller que la tejió, talló o moldeó.</p>
+    </div>
+    <div>
+      <h3>Explora</h3>
+      <ul>
+        <li><a href="index.php#catalogo">Catálogo</a></li>
+        <li><a href="index.php#nosotros">Quiénes somos</a></li>
+        <?php if (!compradorActual() && !vendedorActual()): ?>
+          <li><a href="login.php">Iniciar sesión</a></li>
+        <?php endif; ?>
+      </ul>
+    </div>
+    <div>
+      <h3>Para artesanos</h3>
+      <ul>
+        <?php if (vendedorActual()): ?>
+          <li><a href="vendedor_productos.php">Mis productos</a></li>
+          <li><a href="vendedor_panel.php">Pedidos por despachar</a></li>
+        <?php else: ?>
+          <li><a href="registro.php?rol=vendedor">Vende en Chaska Ruway</a></li>
+          <li>Envío gratis a todo el Perú</li>
+        <?php endif; ?>
+      </ul>
+    </div>
+  </div>
+  <div class="envoltura pie__base">
     <p>Proyecto Universitario - Sistemas Operativos UPC</p>
   </div>
 </footer>

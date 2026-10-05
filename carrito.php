@@ -31,7 +31,7 @@ include 'includes/cabecera.php';
             <?= portada($it, 'portada--mini') ?>
             <div class="item__info">
               <a href="producto.php?id=<?= (int)$it['id_producto'] ?>"><?= e($it['nombre']) ?></a>
-              <p><?= soles($it['precio']) ?> c/u · <?= e($it['nombre_taller']) ?></p>
+              <p><?= soles($it['precio']) ?> c/u, <?= e($it['nombre_taller']) ?>. Disponibles: <?= max(0, (int)$it['stock']) ?></p>
               <?php if ($it['cantidad'] > $it['stock']): ?>
                 <p class="alerta-stock"><?= $it['stock'] > 0 ? 'Solo quedan ' . (int)$it['stock'] . '. Reduce la cantidad.' : 'Se agotó. Quítalo para continuar.' ?></p>
               <?php endif; ?>

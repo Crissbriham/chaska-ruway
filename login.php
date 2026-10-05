@@ -2,20 +2,29 @@
 require_once 'includes/helpers.php';
 
 if (compradorActual()) ir('index.php');
+if (vendedorActual()) ir('vendedor_panel.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $u = trim($_POST['usuario'] ?? '');
     $clave = $_POST['clave'] ?? '';
-    $f = fila("SELECT id_comprador, nombres, password_hash, estado FROM Compradores WHERE username = ? OR email = ?", "ss", $u, $u);
-    // Acepta contraseñas encriptadas (cuentas nuevas) y las de texto plano que ya existen en la BD
-    $ok = $f && $f['estado'] && (password_verify($clave, $f['password_hash']) || hash_equals($f['password_hash'], $clave));
-    if ($ok) {
-        session_regenerate_id(true);
-        $_SESSION['id_comprador'] = (int)$f['id_comprador'];
-        $_SESSION['nombre'] = $f['nombres'];
+    $cuentas = [];
+    $c = fila("SELECT id_comprador AS id, nombres, password_hash, estado FROM Compradores WHERE username = ? OR email = ?", "ss", $u, $u);
+    if ($c) $cuentas[] = ['rol' => 'comprador', 'tabla' => 'Compradores', 'campo' => 'id_comprador', 'f' => $c];
+    $v = fila("SELECT id_vendedor AS id, nombres, nombre_taller, password_hash, estado FROM Vendedores WHERE username = ? OR email = ?", "ss", $u, $u);
+    if ($v) $cuentas[] = ['rol' => 'vendedor', 'tabla' => 'Vendedores', 'campo' => 'id_vendedor', 'f' => $v];
+
+    // Revisa si la cuenta es de comprador o de vendedor y lo lleva a su sección
+    foreach ($cuentas as $cta) {
+        if (!verificarClave($cta['tabla'], $cta['campo'], $cta['f'], $clave)) continue;
+        if (!$cta['f']['estado']) { avisar('Esta cuenta está desactivada.', 'error'); ir('login.php'); }
+        abrirSesion($cta['rol'], $cta['f']);
+        if ($cta['rol'] === 'vendedor') {
+            avisar('Hola, ' . $cta['f']['nombres'] . '. Este es el panel de ' . $cta['f']['nombre_taller'] . '.');
+            ir('vendedor_panel.php');
+        }
         $volver = volverSeguro($_SESSION['volver'] ?? 'index.php');
         unset($_SESSION['volver']);
-        avisar('Hola, ' . $f['nombres'] . '.');
+        avisar('Hola, ' . $cta['f']['nombres'] . '.');
         ir($volver);
     }
     $_SESSION['form'] = ['usuario' => $u];

@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../includes/helpers.php';
 
 /* Consulta base: taller, imagen principal y promedio de reseñas */
-const SQL_PRODUCTO = "SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.stock,
+const SQL_PRODUCTO = "SELECT p.id_producto, p.id_vendedor, p.nombre, p.descripcion, p.precio, p.stock,
     v.nombre_taller, v.departamento AS region, v.descripcion AS taller_descripcion,
     (SELECT i.url FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS imagen,
     (SELECT i.alt FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS alt,
@@ -85,4 +85,4 @@ function alternarFavorito($id_comprador, $id_producto) {
     } elseif (fila("SELECT id_producto FROM Productos WHERE id_producto = ?", "i", $id_producto)) {
         ejecutar("INSERT INTO Favorito (id_comprador, id_producto) VALUES (?, ?)", "ii", $id_comprador, $id_producto);
     }
-}
+}

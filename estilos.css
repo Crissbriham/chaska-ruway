@@ -278,3 +278,164 @@ form:has(#dir-nueva:checked) .campos-nueva { display: grid; }
 .buscador__lupa { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%); width: 2.5rem; height: 2.5rem; border: 0; border-radius: 50%; background: var(--cochinilla); color: var(--blanco); display: grid; place-items: center; cursor: pointer; }
 .buscador__lupa:hover { background: var(--cochinilla-osc); }
 .buscador__lupa svg { width: 18px; height: 18px; }
+
+/* =====================================================================
+   MEJORAS VISUALES: texturas de tejido y más vida en cada sección
+   (todo lo de abajo se suma a lo anterior, no lo reemplaza)
+   ===================================================================== */
+
+/* Fondo con textura de lino muy suave */
+body {
+  background-color: var(--fondo);
+  background-image:
+    repeating-linear-gradient(0deg,  rgba(28,31,51,.022) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(28,31,51,.018) 0 1px, transparent 1px 5px);
+}
+
+/* Títulos de sección con un pedacito de faja debajo */
+.titulo-tejido { display: inline-block; margin-bottom: 1.25rem; }
+.titulo-tejido::after {
+  content: ""; display: block; width: 88px; height: 10px; margin-top: .55rem; border-radius: 2px;
+  background:
+    linear-gradient(135deg, var(--noche) 25%, transparent 25%) -5px 0 / 10px 10px,
+    linear-gradient(225deg, var(--noche) 25%, transparent 25%) -5px 0 / 10px 10px,
+    linear-gradient(315deg, var(--noche) 25%, transparent 25%) 0 0 / 10px 10px,
+    linear-gradient(45deg,  var(--noche) 25%, transparent 25%) 0 0 / 10px 10px,
+    var(--qolle);
+}
+
+/* ---------- Portada principal ---------- */
+.hero {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 78% 45%, rgba(227,162,26,.16), transparent 55%),
+    radial-gradient(ellipse at 10% 100%, rgba(168,23,74,.22), transparent 50%),
+    linear-gradient(135deg, rgba(255,255,255,.035) 25%, transparent 25%) -22px 0 / 44px 44px,
+    linear-gradient(225deg, rgba(255,255,255,.035) 25%, transparent 25%) -22px 0 / 44px 44px,
+    linear-gradient(315deg, rgba(255,255,255,.035) 25%, transparent 25%) 0 0 / 44px 44px,
+    linear-gradient(45deg,  rgba(255,255,255,.035) 25%, transparent 25%) 0 0 / 44px 44px,
+    var(--noche);
+}
+.hero__acciones { display: flex; flex-wrap: wrap; gap: .75rem; }
+.boton--fantasma { background: transparent; border-color: rgba(246,246,243,.55); color: var(--fondo); }
+.boton--fantasma:hover { background: rgba(246,246,243,.1); border-color: var(--fondo); color: var(--fondo); }
+.hero__cifras { display: flex; flex-wrap: wrap; gap: 1.75rem; margin: 2.25rem 0 0; padding: 1.1rem 0 0; border-top: 1px solid rgba(201,204,230,.25); }
+.hero__cifras div { display: flex; flex-direction: column-reverse; }
+.hero__cifras dt { color: #C9CCE6; font-size: .95rem; }
+.hero__cifras dd { margin: 0; font: 800 2rem/1.1 var(--serif); color: var(--qolle); }
+
+/* La manta tejida de la derecha (todo hecho con CSS) */
+.manta {
+  position: relative; width: min(100%, 330px); aspect-ratio: 4 / 5; justify-self: center;
+  transform: rotate(-3deg); border-radius: 4px;
+  box-shadow: 0 30px 60px rgba(0,0,0,.4), 0 0 0 1px rgba(0,0,0,.2);
+  background: linear-gradient(to bottom,
+    var(--cochinilla) 0 13%, var(--qolle) 13% 16%, var(--noche) 16% 19%, var(--molle) 19% 31%,
+    var(--qolle) 31% 33%, var(--cochinilla) 33% 67%, var(--qolle) 67% 69%, var(--molle) 69% 81%,
+    var(--noche) 81% 84%, var(--qolle) 84% 87%, var(--cochinilla) 87% 100%);
+}
+/* Rombos tejidos en las franjas de arriba, abajo y en las verdes */
+.manta::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(23,29,69,.6) 25%, transparent 25%) -9px 0 / 18px 18px,
+    linear-gradient(225deg, rgba(23,29,69,.6) 25%, transparent 25%) -9px 0 / 18px 18px,
+    linear-gradient(315deg, rgba(23,29,69,.6) 25%, transparent 25%) 0 0 / 18px 18px,
+    linear-gradient(45deg,  rgba(23,29,69,.6) 25%, transparent 25%) 0 0 / 18px 18px;
+  -webkit-mask: linear-gradient(to bottom, #000 0 13%, transparent 13% 19%, #000 19% 31%, transparent 31% 69%, #000 69% 81%, transparent 81% 87%, #000 87%);
+          mask: linear-gradient(to bottom, #000 0 13%, transparent 13% 19%, #000 19% 31%, transparent 31% 69%, #000 69% 81%, transparent 81% 87%, #000 87%);
+}
+/* Hilo: trama y urdimbre */
+.manta::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(0deg,  rgba(0,0,0,.08) 0 1px, transparent 1px 3px);
+}
+.manta__lucero { position: absolute; left: 50%; top: 50%; width: 46%; aspect-ratio: 1; transform: translate(-50%, -50%); z-index: 1; }
+.manta__lucero::before, .manta__lucero::after { content: ""; position: absolute; inset: 14%; background: var(--qolle); box-shadow: 0 0 0 4px var(--noche); }
+.manta__lucero::after { transform: rotate(45deg); }
+.manta__lucero span { position: absolute; inset: 34%; z-index: 1; border-radius: 50%; background: var(--noche); box-shadow: inset 0 0 0 6px var(--cochinilla); }
+.manta__flecos { position: absolute; left: 4%; right: 4%; height: 16px; background: repeating-linear-gradient(90deg, #F0D9A8 0 2px, transparent 2px 7px); }
+.manta__flecos--arriba { top: -15px; }
+.manta__flecos--abajo { bottom: -15px; }
+@media (max-width: 760px) { .manta { width: 150px; justify-self: start; order: -1; } .hero__cifras dd { font-size: 1.6rem; } }
+
+/* ---------- Catálogo ---------- */
+.regiones { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.5rem; }
+.chip { display: inline-block; padding: .4rem .95rem; border-radius: 999px; border: 1px solid #C9C7BD; background: var(--blanco); color: var(--texto); text-decoration: none; font-weight: 500; font-size: .95rem; }
+.chip:hover { border-color: var(--cochinilla); color: var(--cochinilla); }
+.chip[aria-current="true"] { background: var(--noche); border-color: var(--noche); color: var(--fondo); }
+.resultado { margin: 0 0 1.25rem; }
+
+.tarjeta { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; box-shadow: 0 1px 2px rgba(23,29,69,.05); }
+.tarjeta:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(23,29,69,.13); border-color: #C9C7BD; }
+@media (prefers-reduced-motion: reduce) { .tarjeta, .tarjeta:hover { transition: none; transform: none; } }
+
+/* Portada sin foto: medallón tejido con la inicial y una faja abajo */
+.portada__letra {
+  width: 5.4rem; height: 5.4rem; display: grid; place-items: center; border-radius: 50%;
+  background: rgba(0,0,0,.2); font-size: 2.9rem;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.45), 0 0 0 9px rgba(255,255,255,.1);
+}
+.portada::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 12px;
+  background:
+    linear-gradient(135deg, rgba(23,29,69,.85) 25%, transparent 25%) -6px 0 / 12px 12px,
+    linear-gradient(225deg, rgba(23,29,69,.85) 25%, transparent 25%) -6px 0 / 12px 12px,
+    linear-gradient(315deg, rgba(23,29,69,.85) 25%, transparent 25%) 0 0 / 12px 12px,
+    linear-gradient(45deg,  rgba(23,29,69,.85) 25%, transparent 25%) 0 0 / 12px 12px,
+    var(--qolle);
+}
+.portada:has(img)::after { display: none; }
+.portada--mini .portada__letra { width: 2.6rem; height: 2.6rem; font-size: 1.4rem; box-shadow: 0 0 0 2px rgba(255,255,255,.45); }
+.portada--mini::after { height: 6px; background-size: 6px 6px; }
+.portada--grande .portada__letra { width: 11rem; height: 11rem; font-size: 6rem; box-shadow: 0 0 0 5px rgba(255,255,255,.45), 0 0 0 16px rgba(255,255,255,.1); }
+.portada--grande::after { height: 20px; background-size: 20px 20px; }
+
+/* ---------- ¿Quiénes somos? ---------- */
+.nosotros {
+  position: relative; border-top: 0;
+}
+.nosotros::before {
+  content: ""; display: block; height: 14px; border-block: 3px solid var(--cochinilla);
+  background:
+    linear-gradient(135deg, var(--noche) 25%, transparent 25%) -7px 0 / 14px 14px,
+    linear-gradient(225deg, var(--noche) 25%, transparent 25%) -7px 0 / 14px 14px,
+    linear-gradient(315deg, var(--noche) 25%, transparent 25%) 0 0 / 14px 14px,
+    linear-gradient(45deg,  var(--noche) 25%, transparent 25%) 0 0 / 14px 14px,
+    var(--qolle);
+}
+.nosotros dl > div { position: relative; padding-left: 2.6rem; }
+.nosotros dl > div::before, .nosotros dl > div::after { content: ""; position: absolute; left: .35rem; top: .3rem; width: 1.15rem; height: 1.15rem; background: var(--cochinilla); }
+.nosotros dl > div::after { transform: rotate(45deg); background: var(--qolle); width: .8rem; height: .8rem; left: .53rem; top: .48rem; }
+
+/* ---------- Iniciar sesión y crear cuenta ---------- */
+.acceso .caja { position: relative; overflow: hidden; padding-top: 2.75rem; box-shadow: 0 18px 40px rgba(23,29,69,.08); }
+.acceso .caja::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 12px;
+  background:
+    linear-gradient(135deg, var(--noche) 25%, transparent 25%) -6px 0 / 12px 12px,
+    linear-gradient(225deg, var(--noche) 25%, transparent 25%) -6px 0 / 12px 12px,
+    linear-gradient(315deg, var(--noche) 25%, transparent 25%) 0 0 / 12px 12px,
+    linear-gradient(45deg,  var(--noche) 25%, transparent 25%) 0 0 / 12px 12px,
+    var(--qolle);
+}
+
+/* ---------- Pie de página ---------- */
+.pie {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.03) 25%, transparent 25%) -22px 0 / 44px 44px,
+    linear-gradient(225deg, rgba(255,255,255,.03) 25%, transparent 25%) -22px 0 / 44px 44px,
+    linear-gradient(315deg, rgba(255,255,255,.03) 25%, transparent 25%) 0 0 / 44px 44px,
+    linear-gradient(45deg,  rgba(255,255,255,.03) 25%, transparent 25%) 0 0 / 44px 44px,
+    var(--noche);
+}
+.pie .pie__columnas { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 2rem; padding-block: 2.5rem 1.5rem; align-items: start; }
+.pie h3 { font: 700 1.05rem var(--sans); color: var(--fondo); margin: 0 0 .6rem; }
+.pie ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.pie a { color: #C9CCE6; text-decoration: none; }
+.pie a:hover { color: var(--qolle); }
+.pie .pie__marca strong { font-size: 1.6rem; display: block; margin-bottom: .35rem; }
+.pie .pie__base { border-top: 1px solid rgba(201,204,230,.18); padding-block: 1rem 1.5rem; font-size: .92rem; }
+@media (max-width: 760px) { .pie .pie__columnas { grid-template-columns: 1fr; } }

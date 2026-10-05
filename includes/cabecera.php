@@ -4,14 +4,21 @@
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/../modelo/carrito.php';
 
-$es_vendedor = $es_vendedor ?? false;   // las páginas del panel lo ponen en true
+/* El menú depende de quién inició sesión: visitante, comprador o vendedor */
+$idv = vendedorActual();
 $idc = compradorActual();
-$num_carrito = (!$es_vendedor && $idc) ? contarItemsCarrito($idc) : 0;
+$es_vendedor = (bool)$idv;
+$num_carrito = $idc ? contarItemsCarrito($idc) : 0;
 $aviso = $_SESSION['aviso'] ?? null;
 unset($_SESSION['aviso']);
 $titulo_pagina = $titulo_pagina ?? 'Chaska Ruway | Artesanía peruana';
 $pagina = $pagina ?? '';
 $hero = $hero ?? false;
+if ($hero) {   // cifras reales para la portada
+    $cifras_hero = fila("SELECT (SELECT COUNT(*) FROM Productos WHERE stock > 0) AS piezas,
+                                (SELECT COUNT(DISTINCT id_vendedor) FROM Productos) AS talleres,
+                                (SELECT COUNT(DISTINCT v.departamento) FROM Vendedores v JOIN Productos p ON p.id_vendedor = v.id_vendedor) AS regiones");
+}
 ?>
 <!doctype html>
 <html lang="es">
@@ -31,18 +38,14 @@ $hero = $hero ?? false;
 
 <header class="cabecera">
   <div class="envoltura">
-    <a class="marca" href="<?= ($es_vendedor && !empty($_SESSION['id_vendedor'])) ? 'vendedor_panel.php' : 'index.php' ?>"><span class="marca__lucero" aria-hidden="true"></span>Chaska Ruway</a>
+    <a class="marca" href="<?= $es_vendedor ? 'vendedor_panel.php' : 'index.php' ?>"><span class="marca__lucero" aria-hidden="true"></span>Chaska Ruway</a>
     <nav class="menu" aria-label="Principal">
       <?php if ($es_vendedor): ?>
-        <?php if (!empty($_SESSION['id_vendedor'])): ?>
-          <a href="vendedor_panel.php" <?= $pagina === 'v_pedidos' ? 'aria-current="page"' : '' ?>>Pedidos</a>
-          <a href="vendedor_productos.php" <?= $pagina === 'v_productos' ? 'aria-current="page"' : '' ?>>Mis productos</a>
-          <a href="index.php">Ver la tienda</a>
-          <span class="saludo"><?= e($_SESSION['taller']) ?></span>
-          <a href="vendedor_logout.php">Salir</a>
-        <?php else: ?>
-          <a href="index.php#catalogo">Ir a la tienda</a>
-        <?php endif; ?>
+        <a href="vendedor_panel.php" <?= $pagina === 'v_pedidos' ? 'aria-current="page"' : '' ?>>Pedidos</a>
+        <a href="vendedor_productos.php" <?= in_array($pagina, ['v_productos', 'v_producto'], true) ? 'aria-current="page"' : '' ?>>Mis productos</a>
+        <a href="index.php#catalogo" <?= $pagina === 'catalogo' ? 'aria-current="page"' : '' ?>>Ver la tienda</a>
+        <span class="saludo"><?= e($_SESSION['taller']) ?></span>
+        <a href="logout.php">Salir</a>
       <?php else: ?>
       <a href="index.php#catalogo" <?= $pagina === 'catalogo' ? 'aria-current="page"' : '' ?>>Catálogo</a>
       <?php if ($idc): ?>
@@ -54,7 +57,6 @@ $hero = $hero ?? false;
         <span class="saludo">Hola, <?= e($_SESSION['nombre']) ?></span>
         <a href="logout.php">Salir</a>
       <?php else: ?>
-        <a href="vendedor_login.php">Soy vendedor</a>
         <a href="login.php" <?= $pagina === 'login' ? 'aria-current="page"' : '' ?>>Iniciar sesión</a>
         <a class="boton" href="registro.php">Crear cuenta</a>
       <?php endif; ?>
@@ -70,9 +72,23 @@ $hero = $hero ?? false;
       <h1>Chaska Ruway</h1>
       <p class="hero__lema">Artesanía peruana, directo de quien la hace.</p>
       <p class="hero__quechua">En quechua, chaska es el lucero y ruway es hacer.</p>
-      <a class="boton boton--claro" href="#catalogo">Ver el catálogo</a>
+      <div class="hero__acciones">
+        <a class="boton boton--claro" href="#catalogo">Ver el catálogo</a>
+        <?php if (!$idc && !$idv): ?>
+          <a class="boton boton--fantasma" href="registro.php?rol=vendedor">Vende tus piezas</a>
+        <?php endif; ?>
+      </div>
+      <dl class="hero__cifras">
+        <div><dt>piezas disponibles</dt><dd><?= (int)$cifras_hero['piezas'] ?></dd></div>
+        <div><dt>talleres artesanos</dt><dd><?= (int)$cifras_hero['talleres'] ?></dd></div>
+        <div><dt>regiones del Perú</dt><dd><?= (int)$cifras_hero['regiones'] ?></dd></div>
+      </dl>
     </div>
-    <div class="lucero" aria-hidden="true"><span></span></div>
+    <div class="manta" aria-hidden="true">
+      <span class="manta__flecos manta__flecos--arriba"></span>
+      <div class="manta__lucero"><span></span></div>
+      <span class="manta__flecos manta__flecos--abajo"></span>
+    </div>
   </div>
 </section>
 <div class="faja" aria-hidden="true"></div>
@@ -83,4 +99,4 @@ $hero = $hero ?? false;
 <main class="envoltura">
   <?php if ($aviso): ?>
     <div class="aviso<?= $aviso['tipo'] === 'error' ? ' aviso--error' : '' ?>" role="<?= $aviso['tipo'] === 'error' ? 'alert' : 'status' ?>"><?= e($aviso['texto']) ?></div>
-  <?php endif; ?>
+  <?php endif; ?>
