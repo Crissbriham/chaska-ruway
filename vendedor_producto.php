@@ -67,4 +67,31 @@ include 'includes/cabecera.php';
       </div>
     </div>
   </form>
+
+  <?php if ($p): ?>
+  <section class="zona-eliminar">
+    <?php if (productoTieneVentas($id)): ?>
+      <h2>Retirar de la venta</h2>
+      <p>Este producto ya tiene ventas, por eso no se puede eliminar: se perdería el historial de esos pedidos. Si ya no lo vas a vender, déjalo agotado y nadie más podrá comprarlo.</p>
+      <?php if ((int)$p['stock'] > 0): ?>
+      <form method="post" action="vendedor_accion.php" onsubmit="return confirm('¿Dejar este producto agotado?');">
+        <input type="hidden" name="accion" value="producto_agotar">
+        <input type="hidden" name="id_producto" value="<?= $id ?>">
+        <input type="hidden" name="volver" value="vendedor_producto.php?id=<?= $id ?>">
+        <button class="boton boton--peligro" type="submit">Dejar agotado</button>
+      </form>
+      <?php else: ?>
+        <p class="ayuda">Ya está agotado.</p>
+      <?php endif; ?>
+    <?php else: ?>
+      <h2>Eliminar producto</h2>
+      <p>Se borrará de la tienda junto con su foto. Esta acción no se puede deshacer.</p>
+      <form method="post" action="vendedor_accion.php" onsubmit="return confirm('¿Eliminar este producto? No se puede deshacer.');">
+        <input type="hidden" name="accion" value="producto_eliminar">
+        <input type="hidden" name="id_producto" value="<?= $id ?>">
+        <button class="boton boton--peligro" type="submit">Eliminar producto</button>
+      </form>
+    <?php endif; ?>
+  </section>
+  <?php endif; ?>
 <?php include 'includes/pie.php'; ?>

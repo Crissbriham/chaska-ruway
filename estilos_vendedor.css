@@ -43,3 +43,10 @@
 .form-producto .check { display: flex; gap: .45rem; align-items: center; font-weight: 500; }
 .botones-form { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-top: .5rem; }
 @media (max-width: 760px) { .form-producto { grid-template-columns: 1fr; } }
+
+/* ---------- Eliminar productos ---------- */
+.boton--peligro { background: transparent; border-color: #B42318; color: #B42318; }
+.boton--peligro:hover { background: #B42318; border-color: #B42318; color: var(--blanco); }
+.zona-eliminar { margin-top: 2.5rem; padding: 1.25rem 1.5rem; background: var(--blanco); border: 1px solid #F1C0BB; border-left: 5px solid #B42318; border-radius: 0 6px 6px 0; max-width: 760px; }
+.zona-eliminar h2 { font-size: 1.3rem; margin-bottom: .35rem; }
+.zona-eliminar p { color: var(--suave); margin: 0 0 1rem; max-width: 60ch; }

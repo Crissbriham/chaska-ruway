@@ -255,3 +255,45 @@ function quitarFoto($id_producto) {
     }
     ejecutar("DELETE FROM Imagen_Producto WHERE id_producto = ?", "i", $id_producto);
 }
+
+/* ---------- Eliminar productos ---------- */
+/* Un producto que ya se vendió está en el historial de pedidos (Detalle_Pedidos)
+   y la base no deja borrarlo. Solo se eliminan los que nunca se vendieron. */
+function productoTieneVentas($id_producto) {
+    return (bool)fila("SELECT 1 AS si FROM Detalle_Pedidos WHERE id_producto = ? LIMIT 1", "i", $id_producto);
+}
+
+/* Ids de los productos del taller que ya tienen ventas (para la tabla de Mis productos) */
+function idsProductosConVentas($idv) {
+    return array_map('intval', array_column(filas("SELECT DISTINCT d.id_producto FROM Detalle_Pedidos d
+        JOIN Productos p ON p.id_producto = d.id_producto WHERE p.id_vendedor = ?", "i", $idv), 'id_producto'));
+}
+
+function eliminarProducto($idv, $id_producto) {
+    global $conexion;
+    $p = obtenerProductoDelVendedor($idv, $id_producto);
+    if (!$p) throw new RuntimeException('Ese producto no es de tu taller.');
+    if (productoTieneVentas($id_producto))
+        throw new RuntimeException('"' . $p['nombre'] . '" ya tiene ventas, así que no se puede borrar sin perder el historial de pedidos. Puedes dejarlo agotado para que nadie más lo compre.');
+
+    $fotos = filas("SELECT url FROM Imagen_Producto WHERE id_producto = ?", "i", $id_producto);
+    $conexion->begin_transaction();
+    try {
+        ejecutar("DELETE FROM Carrito_Detalle WHERE id_producto = ?", "i", $id_producto);   // lo saca de los carritos
+        ejecutar("DELETE FROM Productos WHERE id_producto = ? AND id_vendedor = ?", "ii", $id_producto, $idv);
+        $conexion->commit();   // favoritos, fotos y reseñas se borran solos (ON DELETE CASCADE)
+    } catch (Throwable $ex) {
+        $conexion->rollback();
+        throw $ex;
+    }
+    foreach ($fotos as $f) borrarArchivoFoto($f['url']);
+    return $p['nombre'];
+}
+
+/* Para productos con ventas: stock en 0, se muestra como agotado */
+function dejarAgotado($idv, $id_producto) {
+    $p = obtenerProductoDelVendedor($idv, $id_producto);
+    if (!$p) throw new RuntimeException('Ese producto no es de tu taller.');
+    ejecutar("UPDATE Productos SET stock = 0 WHERE id_producto = ? AND id_vendedor = ?", "ii", $id_producto, $idv);
+    return $p['nombre'];
+}

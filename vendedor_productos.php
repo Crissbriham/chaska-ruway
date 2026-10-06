@@ -5,6 +5,7 @@ require_once 'modelo/vendedor.php';
 exigirVendedor();
 $productos = obtenerProductosVendedor(vendedorActual());
 $cifras = resumenProductosVendedor(vendedorActual());
+$con_ventas = idsProductosConVentas(vendedorActual());
 
 $titulo_pagina = 'Mis productos | Chaska Ruway';
 $pagina = 'v_productos';
@@ -56,6 +57,13 @@ include 'includes/cabecera.php';
                   <button class="boton boton--borde" type="submit" style="padding:.5rem .9rem">Guardar</button>
                 </form>
                 <a class="boton boton--borde boton--chico" href="vendedor_producto.php?id=<?= (int)$p['id_producto'] ?>">Editar</a>
+                <?php if (!in_array((int)$p['id_producto'], $con_ventas, true)): ?>
+                <form method="post" action="vendedor_accion.php" onsubmit="return confirm('¿Eliminar este producto? No se puede deshacer.');">
+                  <input type="hidden" name="accion" value="producto_eliminar">
+                  <input type="hidden" name="id_producto" value="<?= (int)$p['id_producto'] ?>">
+                  <button class="boton boton--peligro boton--chico" type="submit">Eliminar</button>
+                </form>
+                <?php endif; ?>
               </td>
             </tr>
           <?php endforeach; ?>
