@@ -47,7 +47,7 @@
     </div>
   </div>
   <div class="envoltura pie__base">
-    <p>Proyecto Universitario - Sistemas Operativos UPC</p>
+    <p>&copy; 2026 Chaska Ruway. Todos los derechos reservados</p>
   </div>
 </footer>
 

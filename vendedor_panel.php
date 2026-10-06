@@ -65,8 +65,7 @@ include 'includes/cabecera.php';
               </li>
             <?php endforeach; ?>
           </ul>
-          <?php if ($hay_otros): ?><p class="nota-demo">El comprador también pidió productos de otro taller, que los despacha por su cuenta. Aquí solo ves y despachas los tuyos.</p><?php endif; ?>
-        </div>
+          </div>
         <div>
           <p class="envio-dato"><strong>Comprador:</strong> <?= e($pe['nombres'] . ' ' . $pe['apellidos']) ?></p>
           <?php if ($pe['direccion']): ?>
