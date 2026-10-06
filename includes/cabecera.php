@@ -71,7 +71,7 @@ if ($hero) {   // cifras reales para la portada
     <div>
       <h1>Chaska Ruway</h1>
       <p class="hero__lema">Artesanía peruana, directo de quien la hace.</p>
-      <p class="hero__quechua">En quechua, chaska es el lucero y ruway es hacer.</p>
+      <p class="hero__quechua">En quechua, chaska es estrella y ruway es hacer.</p>
       <div class="hero__acciones">
         <a class="boton boton--claro" href="#catalogo">Ver el catálogo</a>
         <?php if (!$idc && !$idv): ?>
