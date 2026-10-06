@@ -56,4 +56,4 @@ include 'includes/cabecera.php';
       </div>
     <?php endif; ?>
   </section>
-<?php include 'includes/pie.php'; ?>
+<?php include 'includes/pie.php'; ?>
