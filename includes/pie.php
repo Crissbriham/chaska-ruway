@@ -48,7 +48,7 @@
   </div>
   <div class="envoltura pie__base">
     <p>&copy; 2026 Chaska Ruway. Todos los derechos reservados.</p>
-    <p> Siguenos Facebook, Instagram, Telegram y en Whatsapp como chaskaRuway2026.
+    <p> Siguenos Facebook, Instagram, Telegram y en Whatsapp como chaskaRuway2026. <p>
   </div>
 </footer>
 
