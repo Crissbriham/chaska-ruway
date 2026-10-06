@@ -41,6 +41,10 @@ try {
         $nombre = eliminarProducto($idv, (int)($_POST['id_producto'] ?? 0));
         avisar('Eliminaste "' . $nombre . '" de tu catálogo.');
         $volver = 'vendedor_productos.php';
+    } elseif ($accion === 'producto_visibilidad') {
+        $mostrar = ($_POST['visible'] ?? '') === '1';
+        $nombre = cambiarVisibilidad($idv, (int)($_POST['id_producto'] ?? 0), $mostrar);
+        avisar($mostrar ? '"' . $nombre . '" vuelve a estar en la tienda.' : '"' . $nombre . '" ya no se muestra en la tienda. Puedes volver a mostrarlo cuando quieras.');
     } elseif ($accion === 'producto_agotar') {
         $nombre = dejarAgotado($idv, (int)($_POST['id_producto'] ?? 0));
         avisar('"' . $nombre . '" quedó agotado. Ya nadie puede comprarlo.');

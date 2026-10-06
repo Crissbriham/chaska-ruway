@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../includes/helpers.php';
 
 /* Consulta base: taller, imagen principal y promedio de reseñas */
-const SQL_PRODUCTO = "SELECT p.id_producto, p.id_vendedor, p.nombre, p.descripcion, p.precio, p.stock,
+const SQL_PRODUCTO = "SELECT p.id_producto, p.id_vendedor, p.visible, p.nombre, p.descripcion, p.precio, p.stock,
     v.nombre_taller, v.departamento AS region, v.descripcion AS taller_descripcion,
     (SELECT i.url FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS imagen,
     (SELECT i.alt FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS alt,
@@ -23,7 +23,7 @@ const ORDENES_CATALOGO = [
 function obtenerCatalogo($q = '', $orden = 'valorados', $soloDisponibles = false, $region = '') {
     $orden = ORDENES_CATALOGO[$orden] ?? ORDENES_CATALOGO['valorados'];
     $like = '%' . $q . '%';
-    $donde = ["(p.nombre LIKE ? OR p.descripcion LIKE ? OR v.nombre_taller LIKE ? OR v.departamento LIKE ?)"];
+    $donde = ["p.visible = 1", "(p.nombre LIKE ? OR p.descripcion LIKE ? OR v.nombre_taller LIKE ? OR v.departamento LIKE ?)"];
     $tipos = 'ssss';
     $params = [$like, $like, $like, $like];
     if ($soloDisponibles) $donde[] = 'p.stock > 0';
@@ -34,7 +34,7 @@ function obtenerCatalogo($q = '', $orden = 'valorados', $soloDisponibles = false
 /* Regiones que tienen productos, para los filtros del catálogo */
 function obtenerRegiones() {
     return array_column(filas("SELECT DISTINCT v.departamento FROM Vendedores v
-                               JOIN Productos p ON p.id_vendedor = v.id_vendedor ORDER BY v.departamento"), 'departamento');
+                               JOIN Productos p ON p.id_vendedor = v.id_vendedor WHERE p.visible = 1 ORDER BY v.departamento"), 'departamento');
 }
 
 function obtenerProductoPorId($id) {
@@ -42,7 +42,7 @@ function obtenerProductoPorId($id) {
 }
 
 function obtenerRelacionados($id, $limite = 4) {
-    return filas(SQL_PRODUCTO . " WHERE p.id_producto <> ? AND p.stock > 0 ORDER BY RAND() LIMIT " . (int)$limite, "i", $id);
+    return filas(SQL_PRODUCTO . " WHERE p.id_producto <> ? AND p.stock > 0 AND p.visible = 1 ORDER BY RAND() LIMIT " . (int)$limite, "i", $id);
 }
 
 function obtenerResenas($id_producto) {
@@ -75,7 +75,7 @@ function obtenerIdsFavoritos($id_comprador) {
 }
 
 function obtenerFavoritos($id_comprador) {
-    return filas(SQL_PRODUCTO . " JOIN Favorito f ON f.id_producto = p.id_producto WHERE f.id_comprador = ? ORDER BY f.fecha DESC", "i", $id_comprador);
+    return filas(SQL_PRODUCTO . " JOIN Favorito f ON f.id_producto = p.id_producto WHERE f.id_comprador = ? AND p.visible = 1 ORDER BY f.fecha DESC", "i", $id_comprador);
 }
 
 function alternarFavorito($id_comprador, $id_producto) {
@@ -85,4 +85,4 @@ function alternarFavorito($id_comprador, $id_producto) {
     } elseif (fila("SELECT id_producto FROM Productos WHERE id_producto = ?", "i", $id_producto)) {
         ejecutar("INSERT INTO Favorito (id_comprador, id_producto) VALUES (?, ?)", "ii", $id_comprador, $id_producto);
     }
-}
+}

@@ -69,29 +69,30 @@ include 'includes/cabecera.php';
   </form>
 
   <?php if ($p): ?>
-  <section class="zona-eliminar">
-    <?php if (productoTieneVentas($id)): ?>
-      <h2>Retirar de la venta</h2>
-      <p>Este producto ya tiene ventas, por eso no se puede eliminar: se perdería el historial de esos pedidos. Si ya no lo vas a vender, déjalo agotado y nadie más podrá comprarlo.</p>
-      <?php if ((int)$p['stock'] > 0): ?>
-      <form method="post" action="vendedor_accion.php" onsubmit="return confirm('¿Dejar este producto agotado?');">
-        <input type="hidden" name="accion" value="producto_agotar">
-        <input type="hidden" name="id_producto" value="<?= $id ?>">
-        <input type="hidden" name="volver" value="vendedor_producto.php?id=<?= $id ?>">
-        <button class="boton boton--peligro" type="submit">Dejar agotado</button>
-      </form>
-      <?php else: ?>
-        <p class="ayuda">Ya está agotado.</p>
-      <?php endif; ?>
-    <?php else: ?>
-      <h2>Eliminar producto</h2>
-      <p>Se borrará de la tienda junto con su foto. Esta acción no se puede deshacer.</p>
-      <form method="post" action="vendedor_accion.php" onsubmit="return confirm('¿Eliminar este producto? No se puede deshacer.');">
-        <input type="hidden" name="accion" value="producto_eliminar">
-        <input type="hidden" name="id_producto" value="<?= $id ?>">
-        <button class="boton boton--peligro" type="submit">Eliminar producto</button>
-      </form>
-    <?php endif; ?>
+  <section class="zona-visible">
+    <h2><?= $p['visible'] ? 'Visible en la tienda' : 'Oculto de la tienda' ?></h2>
+    <p><?= $p['visible']
+        ? 'Los compradores pueden ver y comprar este producto. Si lo ocultas, desaparece del catálogo, la búsqueda y los favoritos, pero se conserva con su historial.'
+        : 'Los compradores no lo ven ni pueden comprarlo. Tú sí lo sigues viendo aquí y en "Mis productos".' ?></p>
+    <form method="post" action="vendedor_accion.php">
+      <input type="hidden" name="accion" value="producto_visibilidad">
+      <input type="hidden" name="id_producto" value="<?= $id ?>">
+      <input type="hidden" name="visible" value="<?= $p['visible'] ? '0' : '1' ?>">
+      <input type="hidden" name="volver" value="vendedor_producto.php?id=<?= $id ?>">
+      <button class="boton <?= $p['visible'] ? 'boton--borde' : '' ?>" type="submit"><?= $p['visible'] ? 'Quitar de la tienda' : 'Mostrar en la tienda' ?></button>
+    </form>
   </section>
+
+  <?php if (!productoTieneVentas($id)): ?>
+  <section class="zona-eliminar">
+    <h2>Eliminar producto</h2>
+    <p>Se borrará para siempre junto con su foto. Si solo quieres dejar de venderlo por un tiempo, mejor quítalo de la tienda.</p>
+    <form method="post" action="vendedor_accion.php" onsubmit="return confirm('¿Eliminar este producto? No se puede deshacer.');">
+      <input type="hidden" name="accion" value="producto_eliminar">
+      <input type="hidden" name="id_producto" value="<?= $id ?>">
+      <button class="boton boton--peligro" type="submit">Eliminar producto</button>
+    </form>
+  </section>
+  <?php endif; ?>
   <?php endif; ?>
 <?php include 'includes/pie.php'; ?>

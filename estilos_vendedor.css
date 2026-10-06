@@ -50,3 +50,12 @@
 .zona-eliminar { margin-top: 2.5rem; padding: 1.25rem 1.5rem; background: var(--blanco); border: 1px solid #F1C0BB; border-left: 5px solid #B42318; border-radius: 0 6px 6px 0; max-width: 760px; }
 .zona-eliminar h2 { font-size: 1.3rem; margin-bottom: .35rem; }
 .zona-eliminar p { color: var(--suave); margin: 0 0 1rem; max-width: 60ch; }
+
+/* ---------- Mostrar / ocultar en la tienda ---------- */
+.zona-visible { margin-top: 2.5rem; padding: 1.25rem 1.5rem; background: var(--blanco); border: 1px solid var(--linea); border-left: 5px solid var(--anil); border-radius: 0 6px 6px 0; max-width: 760px; }
+.zona-visible h2 { font-size: 1.3rem; margin-bottom: .35rem; }
+.zona-visible p { color: var(--suave); margin: 0 0 1rem; max-width: 60ch; }
+.zona-visible + .zona-eliminar { margin-top: 1rem; }
+.etiqueta--oculto { background: #ECEBE6; color: var(--suave); margin-left: .4rem; font-size: .78rem; }
+.cifras { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 760px) { .cifras { grid-template-columns: 1fr 1fr; } }

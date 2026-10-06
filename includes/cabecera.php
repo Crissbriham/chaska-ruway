@@ -15,9 +15,9 @@ $titulo_pagina = $titulo_pagina ?? 'Chaska Ruway | Artesanía peruana';
 $pagina = $pagina ?? '';
 $hero = $hero ?? false;
 if ($hero) {   // cifras reales para la portada
-    $cifras_hero = fila("SELECT (SELECT COUNT(*) FROM Productos WHERE stock > 0) AS piezas,
-                                (SELECT COUNT(DISTINCT id_vendedor) FROM Productos) AS talleres,
-                                (SELECT COUNT(DISTINCT v.departamento) FROM Vendedores v JOIN Productos p ON p.id_vendedor = v.id_vendedor) AS regiones");
+    $cifras_hero = fila("SELECT (SELECT COUNT(*) FROM Productos WHERE stock > 0 AND visible = 1) AS piezas,
+                                (SELECT COUNT(DISTINCT id_vendedor) FROM Productos WHERE visible = 1) AS talleres,
+                                (SELECT COUNT(DISTINCT v.departamento) FROM Vendedores v JOIN Productos p ON p.id_vendedor = v.id_vendedor WHERE p.visible = 1) AS regiones");
 }
 ?>
 <!doctype html>
@@ -99,4 +99,4 @@ if ($hero) {   // cifras reales para la portada
 <main class="envoltura">
   <?php if ($aviso): ?>
     <div class="aviso<?= $aviso['tipo'] === 'error' ? ' aviso--error' : '' ?>" role="<?= $aviso['tipo'] === 'error' ? 'alert' : 'status' ?>"><?= e($aviso['texto']) ?></div>
-  <?php endif; ?>
+  <?php endif; ?>

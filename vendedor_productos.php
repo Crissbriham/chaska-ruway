@@ -21,6 +21,7 @@ include 'includes/cabecera.php';
     <div><dt>Unidades disponibles</dt><dd><?= $cifras['unidades'] ?></dd></div>
     <div><dt>Con pocas unidades</dt><dd class="<?= $cifras['pocos'] ? 'alerta' : '' ?>"><?= $cifras['pocos'] ?></dd></div>
     <div><dt>Agotados</dt><dd class="<?= $cifras['agotados'] ? 'alerta' : '' ?>"><?= $cifras['agotados'] ?></dd></div>
+    <div><dt>Ocultos</dt><dd><?= $cifras['ocultos'] ?></dd></div>
   </dl>
 
   <?php if (!$productos): ?>
@@ -38,6 +39,7 @@ include 'includes/cabecera.php';
                   <div>
                     <a href="vendedor_producto.php?id=<?= (int)$p['id_producto'] ?>"><?= e($p['nombre']) ?></a>
                     <?= textoStock($p['stock']) ?>
+                    <?php if (!$p['visible']): ?><span class="etiqueta etiqueta--oculto">Oculto</span><?php endif; ?>
                   </div>
                 </div>
               </td>
@@ -57,6 +59,13 @@ include 'includes/cabecera.php';
                   <button class="boton boton--borde" type="submit" style="padding:.5rem .9rem">Guardar</button>
                 </form>
                 <a class="boton boton--borde boton--chico" href="vendedor_producto.php?id=<?= (int)$p['id_producto'] ?>">Editar</a>
+                <form method="post" action="vendedor_accion.php">
+                  <input type="hidden" name="accion" value="producto_visibilidad">
+                  <input type="hidden" name="id_producto" value="<?= (int)$p['id_producto'] ?>">
+                  <input type="hidden" name="visible" value="<?= $p['visible'] ? '0' : '1' ?>">
+                  <input type="hidden" name="volver" value="vendedor_productos.php">
+                  <button class="boton boton--borde boton--chico" type="submit"><?= $p['visible'] ? 'Ocultar' : 'Mostrar' ?></button>
+                </form>
                 <?php if (!in_array((int)$p['id_producto'], $con_ventas, true)): ?>
                 <form method="post" action="vendedor_accion.php" onsubmit="return confirm('¿Eliminar este producto? No se puede deshacer.');">
                   <input type="hidden" name="accion" value="producto_eliminar">

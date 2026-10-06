@@ -144,7 +144,7 @@ function avanzarPedido($idv, $id_pedido, $accion, $empresa = '', $codigo = '') {
 
 /* ---------- Productos del taller ---------- */
 function obtenerProductosVendedor($idv) {
-    return filas("SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.stock, " . SQL_IMAGEN . "
+    return filas("SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.stock, p.visible, " . SQL_IMAGEN . "
                   FROM Productos p WHERE p.id_vendedor = ? ORDER BY p.id_producto DESC", "i", $idv);
 }
 
@@ -183,7 +183,7 @@ const SQL_IMAGEN = "(SELECT i.url FROM Imagen_Producto i WHERE i.id_producto = p
 
 /* Solo devuelve el producto si es de este vendedor */
 function obtenerProductoDelVendedor($idv, $id_producto) {
-    return fila("SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.stock, " . SQL_IMAGEN . "
+    return fila("SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.stock, p.visible, " . SQL_IMAGEN . "
                  FROM Productos p WHERE p.id_producto = ? AND p.id_vendedor = ?", "ii", $id_producto, $idv);
 }
 
@@ -193,7 +193,8 @@ function resumenProductosVendedor($idv) {
                       COALESCE(SUM(stock), 0) AS unidades,
                       COALESCE(SUM(stock > 0), 0) AS con_stock,
                       COALESCE(SUM(stock BETWEEN 1 AND 5), 0) AS pocos,
-                      COALESCE(SUM(stock <= 0), 0) AS agotados
+                      COALESCE(SUM(stock <= 0), 0) AS agotados,
+                      COALESCE(SUM(visible = 0), 0) AS ocultos
                FROM Productos WHERE id_vendedor = ?", "i", $idv);
     return array_map('intval', $f);
 }
@@ -321,5 +322,15 @@ function dejarAgotado($idv, $id_producto) {
     $p = obtenerProductoDelVendedor($idv, $id_producto);
     if (!$p) throw new RuntimeException('Ese producto no es de tu taller.');
     ejecutar("UPDATE Productos SET stock = 0 WHERE id_producto = ? AND id_vendedor = ?", "ii", $id_producto, $idv);
+    return $p['nombre'];
+}
+
+/* ---------- Mostrar u ocultar en la tienda ---------- */
+/* Oculto: los compradores no lo ven en el catálogo, búsqueda, favoritos ni pueden comprarlo.
+   El producto y su historial de ventas se conservan. */
+function cambiarVisibilidad($idv, $id_producto, $visible) {
+    $p = obtenerProductoDelVendedor($idv, $id_producto);
+    if (!$p) throw new RuntimeException('Ese producto no es de tu taller.');
+    ejecutar("UPDATE Productos SET visible = ? WHERE id_producto = ? AND id_vendedor = ?", "iii", $visible ? 1 : 0, $id_producto, $idv);
     return $p['nombre'];
 }

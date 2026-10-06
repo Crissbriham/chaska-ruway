@@ -12,7 +12,7 @@ function obtenerOCrearCarrito($id_comprador, $crear = true) {
 function obtenerItemsCarrito($id_comprador) {
     $idc = obtenerOCrearCarrito($id_comprador, false);
     if (!$idc) return [];
-    return filas("SELECT cd.id_detalle, cd.cantidad, p.id_producto, p.nombre, p.precio, p.stock, v.nombre_taller,
+    return filas("SELECT cd.id_detalle, cd.cantidad, p.id_producto, p.nombre, p.precio, IF(p.visible = 1, p.stock, 0) AS stock, p.visible, v.nombre_taller,
         (SELECT i.url FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS imagen,
         (SELECT i.alt FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS alt
         FROM Carrito_Detalle cd
@@ -29,8 +29,8 @@ function contarItemsCarrito($id_comprador) {
 
 /* Agrega al carrito sin pasar del stock. Devuelve ['ok'=>bool, 'mensaje'=>texto] */
 function agregarAlCarrito($id_comprador, $id_producto, $cantidad) {
-    $prod = fila("SELECT nombre, precio, stock FROM Productos WHERE id_producto = ?", "i", $id_producto);
-    if (!$prod) return ['ok' => false, 'mensaje' => 'Ese producto ya no existe.'];
+    $prod = fila("SELECT nombre, precio, stock, visible FROM Productos WHERE id_producto = ?", "i", $id_producto);
+    if (!$prod || !$prod['visible']) return ['ok' => false, 'mensaje' => 'Ese producto ya no está a la venta.'];
 
     $idc = obtenerOCrearCarrito($id_comprador);
     $actual = fila("SELECT id_detalle, cantidad FROM Carrito_Detalle WHERE id_carrito = ? AND id_producto = ?", "ii", $idc, $id_producto);
@@ -55,7 +55,7 @@ function agregarAlCarrito($id_comprador, $id_producto, $cantidad) {
 
 /* Cambia la cantidad (o quita si es 0). Solo toca líneas del propio comprador. */
 function cambiarCantidad($id_comprador, $id_detalle, $cantidad) {
-    $item = fila("SELECT cd.id_detalle, p.stock, p.nombre FROM Carrito_Detalle cd
+    $item = fila("SELECT cd.id_detalle, IF(p.visible = 1, p.stock, 0) AS stock, p.nombre FROM Carrito_Detalle cd
                   JOIN Carrito c ON c.id_carrito = cd.id_carrito
                   JOIN Productos p ON p.id_producto = cd.id_producto
                   WHERE cd.id_detalle = ? AND c.id_comprador = ?", "ii", $id_detalle, $id_comprador);

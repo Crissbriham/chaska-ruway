@@ -7,6 +7,7 @@ $id = (int)($_GET['id'] ?? 0);
 $p = obtenerProductoPorId($id);
 $idu = compradorActual();
 $idv = vendedorActual();
+if ($p && !$p['visible'] && (int)$p['id_vendedor'] !== (int)$idv) $p = null;   // oculto: solo lo ve su artesano
 $favs = obtenerIdsFavoritos($idu);
 
 if ($p) {
@@ -36,6 +37,7 @@ include 'includes/cabecera.php';
     <div class="detalle">
       <?= portada($p, 'portada--grande') ?>
       <div class="detalle__info">
+        <?php if (!$p['visible']): ?><p class="aviso aviso--error" style="margin:0 0 1rem">Este producto está oculto: los compradores no lo ven. Puedes volver a mostrarlo desde "Editar este producto".</p><?php endif; ?>
         <h1><?= e($p['nombre']) ?></h1>
         <p class="taller-linea">Hecho en <strong><?= e($p['nombre_taller']) ?></strong>, <?= e($p['region']) ?></p>
         <a href="#resenas" style="text-decoration:none"><?= estrellas($p['promedio'], (int)$p['num_resenas']) ?></a>
