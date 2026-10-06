@@ -25,10 +25,19 @@ function buscarVendedor($usuario) {
 }
 
 /* ---------- Pedidos ---------- */
+/* Marca que identifica en Historial_Compra lo que hizo cada taller (no cambia la base) */
+function marcaTaller($idv) { return 'taller:' . (int)$idv . ' | '; }
+
+const SQL_YA_HIZO = "EXISTS (SELECT 1 FROM Historial_Compra h JOIN Estado_Pedido es ON es.id_estado = h.id_estado
+        WHERE h.id_pedido = pe.id_pedido AND es.nombre = '%s' AND h.comentario LIKE CONCAT('taller:', ?, ' | %%'))";
+
 function obtenerPedidosVendedor($idv) {
     return filas("SELECT pe.id_pedido, pe.fecha_pedido, pe.estado_pedido, pe.total_pedido, c.nombres, c.apellidos,
         (SELECT mp.nombre FROM Pago pa JOIN Metodo_Pago mp ON mp.id_metodo = pa.id_metodo WHERE pa.id_pedido = pe.id_pedido ORDER BY pa.id_pago DESC LIMIT 1) AS metodo,
         (SELECT pa.estado FROM Pago pa WHERE pa.id_pedido = pe.id_pedido ORDER BY pa.id_pago DESC LIMIT 1) AS estado_pago,
+        (SELECT COUNT(DISTINCT px.id_vendedor) FROM Detalle_Pedidos dx JOIN Productos px ON px.id_producto = dx.id_producto WHERE dx.id_pedido = pe.id_pedido) AS num_talleres,
+        (pe.estado_pedido IN ('Enviado', 'Entregado') OR " . sprintf(SQL_YA_HIZO, 'Enviado') . ") AS yo_envie,
+        (pe.estado_pedido = 'Entregado' OR " . sprintf(SQL_YA_HIZO, 'Entregado') . ") AS yo_entregue,
         en.empresa_envio, en.numero_seguimiento,
         d.destinatario, d.telefono, d.departamento, d.provincia, d.distrito, d.direccion, d.referencia
         FROM Pedidos pe
@@ -36,29 +45,28 @@ function obtenerPedidosVendedor($idv) {
         LEFT JOIN Envio en ON en.id_pedido = pe.id_pedido
         LEFT JOIN Direccion d ON d.id_direccion = en.id_direccion
         WHERE " . SQL_PEDIDO_DEL_VENDEDOR . "
-        ORDER BY pe.fecha_pedido DESC, pe.id_pedido DESC", "i", $idv);
+        ORDER BY pe.fecha_pedido DESC, pe.id_pedido DESC", "iii", $idv, $idv, $idv);
 }
 
-/* Todos los productos de esos pedidos (también los de otros talleres), agrupados por pedido */
+/* Solo los productos de ESTE taller en sus pedidos (los de otros talleres no se muestran) */
 function obtenerItemsPedidosVendedor($idv) {
     $items = [];
-    foreach (filas("SELECT dp.id_pedido, dp.cantidad, dp.precio_unitario, p.nombre, v.nombre_taller, (p.id_vendedor = ?) AS mio
+    foreach (filas("SELECT dp.id_pedido, dp.cantidad, dp.precio_unitario, p.nombre
         FROM Detalle_Pedidos dp
-        JOIN Pedidos pe ON pe.id_pedido = dp.id_pedido
         JOIN Productos p ON p.id_producto = dp.id_producto
-        JOIN Vendedores v ON v.id_vendedor = p.id_vendedor
-        WHERE " . SQL_PEDIDO_DEL_VENDEDOR . "
-        ORDER BY dp.id_detalle", "ii", $idv, $idv) as $it) {
+        WHERE p.id_vendedor = ?
+        ORDER BY dp.id_detalle", "i", $idv) as $it) {
         $items[$it['id_pedido']][] = $it;
     }
     return $items;
 }
 
-/* Qué puede hacer el vendedor con este pedido: 'enviar', 'entregar' o null */
+/* Qué puede hacer el taller con SU parte del pedido: 'enviar', 'entregar' o null */
 function accionPedido($pe) {
-    if ($pe['estado_pedido'] === 'Pagado') return 'enviar';
-    if ($pe['estado_pedido'] === 'Pendiente' && ($pe['metodo'] ?? '') === 'Efectivo') return 'enviar'; // se cobra al entregar
-    if ($pe['estado_pedido'] === 'Enviado') return 'entregar';
+    $pagado = $pe['estado_pedido'] === 'Pagado'
+           || ($pe['estado_pedido'] === 'Pendiente' && ($pe['metodo'] ?? '') === 'Efectivo');   // se cobra al entregar
+    if ($pagado && empty($pe['yo_envie'])) return 'enviar';
+    if ($pe['estado_pedido'] === 'Enviado' && empty($pe['yo_entregue'])) return 'entregar';
     return null;
 }
 
@@ -71,43 +79,61 @@ function registrarHistorial($pe, $estado, $comentario) {
              "iiids", $pe['id_comprador'], $pe['id_pedido'], idEstado($estado), $pe['total_pedido'], $comentario);
 }
 
-/* Marca un pedido como enviado o entregado. Todo o nada: si algo falla no se guarda nada.
-   Lanza RuntimeException con un mensaje para mostrar. */
+/* Cuántos talleres del pedido ya registraron este paso ('Enviado' o 'Entregado') */
+function talleresQueHicieron($id_pedido, $estado) {
+    return (int)fila("SELECT COUNT(DISTINCT SUBSTRING_INDEX(h.comentario, ' | ', 1)) AS n
+        FROM Historial_Compra h JOIN Estado_Pedido es ON es.id_estado = h.id_estado
+        WHERE h.id_pedido = ? AND es.nombre = ? AND h.comentario LIKE 'taller:% | %'", "is", $id_pedido, $estado)['n'];
+}
+
+/* Marca como enviada o entregada la parte de ESTE taller. Cuando todos los talleres del pedido
+   hicieron lo suyo, el pedido completo pasa a Enviado o Entregado. Todo o nada. */
 function avanzarPedido($idv, $id_pedido, $accion, $empresa = '', $codigo = '') {
     global $conexion;
-    $pe = fila("SELECT pe.id_pedido, pe.id_comprador, pe.estado_pedido, pe.total_pedido,
-        (SELECT mp.nombre FROM Pago pa JOIN Metodo_Pago mp ON mp.id_metodo = pa.id_metodo WHERE pa.id_pedido = pe.id_pedido ORDER BY pa.id_pago DESC LIMIT 1) AS metodo,
-        (SELECT pa.estado FROM Pago pa WHERE pa.id_pedido = pe.id_pedido ORDER BY pa.id_pago DESC LIMIT 1) AS estado_pago
-        FROM Pedidos pe WHERE pe.id_pedido = ? AND " . SQL_PEDIDO_DEL_VENDEDOR, "ii", $id_pedido, $idv);
-
+    $pe = null;
+    foreach (obtenerPedidosVendedor($idv) as $x) if ((int)$x['id_pedido'] === (int)$id_pedido) { $pe = $x; break; }
     if (!$pe) throw new RuntimeException('No encontramos ese pedido entre los de tu taller.');
+    $pe['id_comprador'] = (int)fila("SELECT id_comprador FROM Pedidos WHERE id_pedido = ?", "i", $id_pedido)['id_comprador'];
+
     if ($accion === 'enviar' && accionPedido($pe) !== 'enviar')
-        throw new RuntimeException('Este pedido todavía no se puede despachar: el pago aún no está confirmado.');
+        throw new RuntimeException(!empty($pe['yo_envie']) ? 'Ya despachaste tus productos de este pedido.' : 'Este pedido todavía no se puede despachar: el pago aún no está confirmado.');
     if ($accion === 'entregar' && accionPedido($pe) !== 'entregar')
-        throw new RuntimeException('Solo puedes marcar como entregado un pedido que ya fue enviado.');
+        throw new RuntimeException(!empty($pe['yo_entregue']) ? 'Ya marcaste tus productos como entregados.' : 'Podrás marcarlo como entregado cuando todos los productos del pedido hayan sido enviados.');
 
     if ($accion === 'enviar') {
         if (!isset(EMPRESAS_ENVIO[$empresa])) throw new RuntimeException('Elige una empresa de envío.');
         $codigo = trim($codigo);
-        if ($codigo === '') $codigo = EMPRESAS_ENVIO[$empresa] . '-' . str_pad((string)$id_pedido, 6, '0', STR_PAD_LEFT);
-        $codigo = function_exists('mb_substr') ? mb_substr($codigo, 0, 100) : substr($codigo, 0, 100);
+        if ($codigo === '') $codigo = EMPRESAS_ENVIO[$empresa] . '-' . str_pad((string)$id_pedido, 6, '0', STR_PAD_LEFT) . ($pe['num_talleres'] > 1 ? '-' . (int)$idv : '');
+        $codigo = recortar($codigo, 40);
     }
+    $marca = marcaTaller($idv);
+    $total_talleres = (int)$pe['num_talleres'];
 
     $conexion->begin_transaction();
     try {
         if ($accion === 'enviar') {
-            ejecutar("UPDATE Pedidos SET estado_pedido = 'Enviado' WHERE id_pedido = ?", "i", $id_pedido);
-            ejecutar("UPDATE Envio SET empresa_envio = ?, numero_seguimiento = ?, fecha_envio = NOW(), estado = 'En tránsito' WHERE id_pedido = ?",
-                     "ssi", $empresa, $codigo, $id_pedido);
-            registrarHistorial($pe, 'Enviado', 'Despachado con ' . $empresa);
-        } else {
-            ejecutar("UPDATE Pedidos SET estado_pedido = 'Entregado' WHERE id_pedido = ?", "i", $id_pedido);
-            ejecutar("UPDATE Envio SET fecha_entrega = NOW(), estado = 'Entregado' WHERE id_pedido = ?", "i", $id_pedido);
-            if (($pe['estado_pago'] ?? '') === 'Pendiente') {   // efectivo: se cobra al entregar
-                ejecutar("UPDATE Pago SET estado = 'Aprobado' WHERE id_pedido = ? AND estado = 'Pendiente'", "i", $id_pedido);
-                registrarHistorial($pe, 'Pagado', 'Pago recibido contra entrega');
+            registrarHistorial($pe, 'Enviado', $marca . 'Despachado con ' . $empresa . ', código ' . $codigo);
+            /* Se juntan las empresas y códigos de cada taller en el único envío del pedido */
+            $en = fila("SELECT empresa_envio, numero_seguimiento FROM Envio WHERE id_pedido = ?", "i", $id_pedido);
+            $empresas = array_filter(array_map('trim', explode(' / ', $en['empresa_envio'] ?? '')));
+            if (!in_array($empresa, $empresas, true)) $empresas[] = $empresa;
+            $codigos = array_filter(array_map('trim', explode(' / ', $en['numero_seguimiento'] ?? '')));
+            $codigos[] = $codigo;
+            ejecutar("UPDATE Envio SET empresa_envio = ?, numero_seguimiento = ?, fecha_envio = COALESCE(fecha_envio, NOW()), estado = 'En tránsito' WHERE id_pedido = ?",
+                     "ssi", recortar(implode(' / ', $empresas), 100), recortar(implode(' / ', $codigos), 100), $id_pedido);
+            if (talleresQueHicieron($id_pedido, 'Enviado') >= $total_talleres) {
+                ejecutar("UPDATE Pedidos SET estado_pedido = 'Enviado' WHERE id_pedido = ?", "i", $id_pedido);
             }
-            registrarHistorial($pe, 'Entregado', 'Entregado al cliente');
+        } else {
+            registrarHistorial($pe, 'Entregado', $marca . 'Productos entregados al cliente');
+            if (talleresQueHicieron($id_pedido, 'Entregado') >= $total_talleres) {
+                ejecutar("UPDATE Pedidos SET estado_pedido = 'Entregado' WHERE id_pedido = ?", "i", $id_pedido);
+                ejecutar("UPDATE Envio SET fecha_entrega = NOW(), estado = 'Entregado' WHERE id_pedido = ?", "i", $id_pedido);
+                if (($pe['estado_pago'] ?? '') === 'Pendiente') {   // efectivo: se cobra al entregar
+                    ejecutar("UPDATE Pago SET estado = 'Aprobado' WHERE id_pedido = ? AND estado = 'Pendiente'", "i", $id_pedido);
+                    registrarHistorial($pe, 'Pagado', 'Pago recibido contra entrega');
+                }
+            }
         }
         $conexion->commit();
     } catch (Throwable $t) {

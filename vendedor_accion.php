@@ -18,8 +18,8 @@ try {
         $id_pedido = (int)($_POST['id_pedido'] ?? 0);
         avanzarPedido($idv, $id_pedido, $accion, $_POST['empresa'] ?? '', $_POST['codigo'] ?? '');
         avisar($accion === 'enviar'
-            ? 'El pedido #' . $id_pedido . ' quedó marcado como enviado.'
-            : 'El pedido #' . $id_pedido . ' quedó marcado como entregado.');
+            ? 'Tus productos del pedido #' . $id_pedido . ' quedaron marcados como enviados.'
+            : 'Tus productos del pedido #' . $id_pedido . ' quedaron marcados como entregados.');
     } elseif ($accion === 'producto_actualizar') {
         actualizarProducto($idv, (int)($_POST['id_producto'] ?? 0), $_POST['precio'] ?? '', $_POST['stock'] ?? '');
         avisar('Producto actualizado.');

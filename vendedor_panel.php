@@ -14,7 +14,7 @@ $pedidos = [];
 foreach ($todos as $pe) {
     $claves = ['todos'];
     if (accionPedido($pe) === 'enviar') $claves[] = 'despachar';
-    if ($pe['estado_pedido'] === 'Enviado') $claves[] = 'camino';
+    if ($pe['yo_envie'] && !in_array($pe['estado_pedido'], ['Entregado', 'Cancelado'], true)) $claves[] = 'camino';
     if ($pe['estado_pedido'] === 'Entregado') $claves[] = 'entregados';
     foreach ($claves as $k) $cuenta[$k]++;
     if (in_array($ver, $claves, true)) $pedidos[] = $pe;
@@ -42,8 +42,9 @@ include 'includes/cabecera.php';
       $id_pe = (int)$pe['id_pedido'];
       $acc = accionPedido($pe);
       $lineas = $items[$id_pe] ?? [];
-      $mio = 0; $hay_otros = false;
-      foreach ($lineas as $l) { if ($l['mio']) $mio += $l['precio_unitario'] * $l['cantidad']; else $hay_otros = true; }
+      $mio = 0;
+      foreach ($lineas as $l) $mio += $l['precio_unitario'] * $l['cantidad'];
+      $hay_otros = (int)$pe['num_talleres'] > 1;
       $efectivo_pendiente = ($pe['metodo'] ?? '') === 'Efectivo' && ($pe['estado_pago'] ?? '') === 'Pendiente';
   ?>
     <article class="pedido">
@@ -51,7 +52,6 @@ include 'includes/cabecera.php';
         <h2>Pedido #<?= $id_pe ?></h2>
         <span class="dato"><?= fecha($pe['fecha_pedido']) ?></span>
         <span class="dato">Tus productos <strong><?= soles($mio) ?></strong></span>
-        <?php if ($hay_otros): ?><span class="dato">Total del pedido <?= soles($pe['total_pedido']) ?></span><?php endif; ?>
         <?php if ($pe['metodo']): ?><span class="dato"><?= e($pe['metodo']) ?></span><?php endif; ?>
         <span class="etiqueta etiqueta--<?= e($pe['estado_pedido']) ?>"><?= e($pe['estado_pedido']) ?></span>
       </div>
@@ -59,13 +59,13 @@ include 'includes/cabecera.php';
         <div>
           <ul class="pedido__items">
             <?php foreach ($lineas as $l): ?>
-              <li<?= $l['mio'] ? '' : ' class="otro-taller"' ?>>
-                <span><?= (int)$l['cantidad'] ?> × <?= e($l['nombre']) ?><?= $l['mio'] ? '' : ' (' . e($l['nombre_taller']) . ')' ?></span>
+              <li>
+                <span><?= (int)$l['cantidad'] ?> × <?= e($l['nombre']) ?></span>
                 <span><?= soles($l['precio_unitario'] * $l['cantidad']) ?></span>
               </li>
             <?php endforeach; ?>
           </ul>
-          <?php if ($hay_otros): ?><p class="nota-demo">Este pedido también incluye productos de otros talleres. El envío es uno solo para todo el pedido.</p><?php endif; ?>
+          <?php if ($hay_otros): ?><p class="nota-demo">El comprador también pidió productos de otro taller, que los despacha por su cuenta. Aquí solo ves y despachas los tuyos.</p><?php endif; ?>
         </div>
         <div>
           <p class="envio-dato"><strong>Comprador:</strong> <?= e($pe['nombres'] . ' ' . $pe['apellidos']) ?></p>
@@ -94,7 +94,7 @@ include 'includes/cabecera.php';
                   <input type="text" id="cod<?= $id_pe ?>" name="codigo" maxlength="100" placeholder="Opcional: se genera solo">
                 </div>
               </div>
-              <?php if ($efectivo_pendiente): ?><p class="envio-dato">Pago en efectivo: el cliente paga <?= soles($pe['total_pedido']) ?> al recibir.</p><?php endif; ?>
+              <?php if ($efectivo_pendiente): ?><p class="envio-dato">Pago en efectivo: el cliente paga <?= soles($mio) ?> por tus productos al recibir.</p><?php endif; ?>
               <button class="boton" type="submit">Marcar como enviado</button>
             </form>
           <?php elseif ($acc === 'entregar'): ?>
@@ -104,6 +104,10 @@ include 'includes/cabecera.php';
               <input type="hidden" name="volver" value="<?= e(paginaActual()) ?>">
               <button class="boton" type="submit">Marcar como entregado</button>
             </form>
+          <?php elseif ($pe['yo_envie'] && !in_array($pe['estado_pedido'], ['Enviado', 'Entregado', 'Cancelado'], true)): ?>
+            <p class="envio-dato acciones-pedido">Ya despachaste tus productos. El pedido pasará a "Enviado" cuando el otro taller despache los suyos.</p>
+          <?php elseif ($pe['estado_pedido'] === 'Enviado' && $pe['yo_entregue']): ?>
+            <p class="envio-dato acciones-pedido">Ya marcaste tus productos como entregados. Falta que el otro taller confirme los suyos.</p>
           <?php elseif ($pe['estado_pedido'] === 'Pendiente'): ?>
             <p class="envio-dato acciones-pedido">Esperando la confirmación del pago.</p>
           <?php endif; ?>
