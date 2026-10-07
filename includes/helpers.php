@@ -168,3 +168,26 @@ function tarjeta($p, $favs, $volver) {
     </article>
     <?php return ob_get_clean();
 }
+
+/* ---------- Numeración propia de pedidos ----------
+   id_pedido es el código único de toda la tienda (#19). Para que cada persona vea 1, 2, 3...
+   se cuenta cuántos de SUS pedidos tienen un código menor o igual. No cambia la base. */
+function numeroPedidoComprador($id_comprador, $id_pedido) {
+    return (int)fila("SELECT COUNT(*) AS n FROM Pedidos WHERE id_comprador = ? AND id_pedido <= ?",
+                     "ii", $id_comprador, $id_pedido)['n'];
+}
+
+function numeroVentaTaller($id_vendedor, $id_pedido) {
+    return (int)fila("SELECT COUNT(DISTINCT d.id_pedido) AS n FROM Detalle_Pedidos d
+                      JOIN Productos p ON p.id_producto = d.id_producto
+                      WHERE p.id_vendedor = ? AND d.id_pedido <= ?", "ii", $id_vendedor, $id_pedido)['n'];
+}
+
+/* Para una lista que ya contiene TODOS los pedidos de la persona: [id_pedido => 1, 2, 3...] */
+function numerarPedidos($pedidos) {
+    $ids = array_map('intval', array_column($pedidos, 'id_pedido'));
+    sort($ids);
+    $num = [];
+    foreach ($ids as $i => $id) $num[$id] = $i + 1;
+    return $num;
+}

@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id_direccion = (int)$dir;
         }
         $id_pedido = procesarCompra($idu, $id_metodo, $id_direccion);
-        avisar('Listo. Registramos tu pedido #' . $id_pedido . '.');
+        avisar('Listo. Registramos tu pedido #' . numeroPedidoComprador($idu, $id_pedido) . '.');
         ir('pedidos.php?nuevo=' . $id_pedido);
     } catch (RuntimeException $ex) {
         avisar($ex->getMessage(), 'error');

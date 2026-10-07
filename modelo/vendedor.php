@@ -121,20 +121,10 @@ function avanzarPedido($idv, $id_pedido, $accion, $empresa = '', $codigo = '') {
             $codigos[] = $codigo;
             ejecutar("UPDATE Envio SET empresa_envio = ?, numero_seguimiento = ?, fecha_envio = COALESCE(fecha_envio, NOW()), estado = 'En tránsito' WHERE id_pedido = ?",
                      "ssi", recortar(implode(' / ', $empresas), 100), recortar(implode(' / ', $codigos), 100), $id_pedido);
-            if (talleresQueHicieron($id_pedido, 'Enviado') >= $total_talleres) {
-                ejecutar("UPDATE Pedidos SET estado_pedido = 'Enviado' WHERE id_pedido = ?", "i", $id_pedido);
-            }
         } else {
             registrarHistorial($pe, 'Entregado', $marca . 'Productos entregados al cliente');
-            if (talleresQueHicieron($id_pedido, 'Entregado') >= $total_talleres) {
-                ejecutar("UPDATE Pedidos SET estado_pedido = 'Entregado' WHERE id_pedido = ?", "i", $id_pedido);
-                ejecutar("UPDATE Envio SET fecha_entrega = NOW(), estado = 'Entregado' WHERE id_pedido = ?", "i", $id_pedido);
-                if (($pe['estado_pago'] ?? '') === 'Pendiente') {   // efectivo: se cobra al entregar
-                    ejecutar("UPDATE Pago SET estado = 'Aprobado' WHERE id_pedido = ? AND estado = 'Pendiente'", "i", $id_pedido);
-                    registrarHistorial($pe, 'Pagado', 'Pago recibido contra entrega');
-                }
-            }
         }
+        completarPedidoSiCorresponde($id_pedido);
         $conexion->commit();
     } catch (Throwable $t) {
         $conexion->rollback();
@@ -333,4 +323,48 @@ function cambiarVisibilidad($idv, $id_producto, $visible) {
     if (!$p) throw new RuntimeException('Ese producto no es de tu taller.');
     ejecutar("UPDATE Productos SET visible = ? WHERE id_producto = ? AND id_vendedor = ?", "iii", $visible ? 1 : 0, $id_producto, $idv);
     return $p['nombre'];
+}
+
+/* Talleres distintos que tienen productos HOY en el pedido */
+function talleresDelPedido($id_pedido) {
+    return (int)fila("SELECT COUNT(DISTINCT p.id_vendedor) AS n FROM Detalle_Pedidos d
+        JOIN Productos p ON p.id_producto = d.id_producto WHERE d.id_pedido = ?", "i", $id_pedido)['n'];
+}
+
+/* Si todos los talleres del pedido ya despacharon (o entregaron), avanza el pedido completo.
+   Se usa al marcar y también al abrir el panel, por si los productos del pedido cambiaron
+   después (por ejemplo, editando la base en DBeaver). Devuelve true si cambió algo. */
+function completarPedidoSiCorresponde($id_pedido) {
+    $pe = fila("SELECT pe.id_pedido, pe.id_comprador, pe.estado_pedido, pe.total_pedido,
+        (SELECT pa.estado FROM Pago pa WHERE pa.id_pedido = pe.id_pedido ORDER BY pa.id_pago DESC LIMIT 1) AS estado_pago
+        FROM Pedidos pe WHERE pe.id_pedido = ?", "i", $id_pedido);
+    if (!$pe) return false;
+    $total = talleresDelPedido($id_pedido);
+    if ($total < 1) return false;
+
+    if (in_array($pe['estado_pedido'], ['Pagado', 'Pendiente'], true) && talleresQueHicieron($id_pedido, 'Enviado') >= $total) {
+        ejecutar("UPDATE Pedidos SET estado_pedido = 'Enviado' WHERE id_pedido = ?", "i", $id_pedido);
+        return true;
+    }
+    if ($pe['estado_pedido'] === 'Enviado' && talleresQueHicieron($id_pedido, 'Entregado') >= $total) {
+        ejecutar("UPDATE Pedidos SET estado_pedido = 'Entregado' WHERE id_pedido = ?", "i", $id_pedido);
+        ejecutar("UPDATE Envio SET fecha_entrega = NOW(), estado = 'Entregado' WHERE id_pedido = ?", "i", $id_pedido);
+        if (($pe['estado_pago'] ?? '') === 'Pendiente') {   // efectivo: se cobra al entregar
+            ejecutar("UPDATE Pago SET estado = 'Aprobado' WHERE id_pedido = ? AND estado = 'Pendiente'", "i", $id_pedido);
+            registrarHistorial($pe, 'Pagado', 'Pago recibido contra entrega');
+        }
+        return true;
+    }
+    return false;
+}
+
+/* Revisa los pedidos que están esperando a otro taller y los completa si ya corresponde */
+function sincronizarPedidosVendedor($idv, $pedidos) {
+    $cambio = false;
+    foreach ($pedidos as $pe) {
+        $esperando = (!empty($pe['yo_envie']) && in_array($pe['estado_pedido'], ['Pagado', 'Pendiente'], true))
+                  || (!empty($pe['yo_entregue']) && $pe['estado_pedido'] === 'Enviado');
+        if ($esperando && completarPedidoSiCorresponde((int)$pe['id_pedido'])) $cambio = true;
+    }
+    return $cambio;
 }

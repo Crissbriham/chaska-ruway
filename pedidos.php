@@ -6,6 +6,7 @@ exigirSesion('pedidos.php', 'Inicia sesión para ver tus pedidos.');
 $idu = compradorActual();
 $nuevo = (int)($_GET['nuevo'] ?? 0);
 $pedidos = obtenerPedidos($idu);
+$numeros = numerarPedidos($pedidos);   // 1, 2, 3... propios del comprador
 $detalle = obtenerDetallePedidos($idu);
 $historial = obtenerHistorial($idu);
 $pasos = obtenerPasosPedido();
@@ -29,7 +30,7 @@ include 'includes/cabecera.php';
   ?>
     <article class="pedido<?= $id_pe === $nuevo ? ' pedido--nuevo' : '' ?>">
       <div class="pedido__cabeza">
-        <h2>Pedido #<?= $id_pe ?></h2>
+        <h2>Pedido #<?= $numeros[$id_pe] ?></h2>
         <span class="dato"><?= fecha($pe['fecha_pedido']) ?></span>
         <span class="dato">Total <strong><?= soles($pe['total_pedido']) ?></strong></span>
         <?php if ($pe['metodo']): ?><span class="dato"><?= e($pe['metodo']) ?></span><?php endif; ?>

@@ -5,6 +5,8 @@ require_once 'modelo/vendedor.php';
 exigirVendedor();
 $idv = vendedorActual();
 $todos = obtenerPedidosVendedor($idv);
+if (sincronizarPedidosVendedor($idv, $todos)) $todos = obtenerPedidosVendedor($idv);   // completa pedidos que ya no esperan a nadie
+$numeros = numerarPedidos($todos);   // 1, 2, 3... propios del taller
 $items = obtenerItemsPedidosVendedor($idv);
 
 $filtros = ['despachar' => 'Por despachar', 'camino' => 'En camino', 'entregados' => 'Entregados', 'todos' => 'Todos'];
@@ -49,7 +51,7 @@ include 'includes/cabecera.php';
   ?>
     <article class="pedido">
       <div class="pedido__cabeza">
-        <h2>Pedido #<?= $id_pe ?></h2>
+        <h2>Pedido #<?= $numeros[$id_pe] ?></h2>
         <span class="dato"><?= fecha($pe['fecha_pedido']) ?></span>
         <span class="dato">Tus productos <strong><?= soles($mio) ?></strong></span>
         <?php if ($pe['metodo']): ?><span class="dato"><?= e($pe['metodo']) ?></span><?php endif; ?>
