@@ -3,8 +3,7 @@ require_once 'includes/helpers.php';
 require_once 'modelo/productos.php';
 
 $q = trim($_GET['q'] ?? '');
-$regiones = obtenerRegiones();
-$region = in_array($_GET['region'] ?? '', $regiones, true) ? $_GET['region'] : '';
+$region = '';   // el filtro por regiones se quitó de la portada
 $productos = obtenerCatalogo($q, 'valorados', false, $region);   // siempre ordenado por mejor valorados
 $unidades = array_sum(array_map(fn($x) => max(0, (int)$x['stock']), $productos));
 $con_stock = count(array_filter($productos, fn($x) => (int)$x['stock'] > 0));
@@ -27,17 +26,7 @@ include 'includes/cabecera.php';
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
         </button>
       </div>
-      <?php if ($region !== ''): ?><input type="hidden" name="region" value="<?= e($region) ?>"><?php endif; ?>
     </form>
-
-    <?php if ($regiones): ?>
-    <nav class="regiones" aria-label="Filtrar por región">
-      <a class="chip" href="index.php<?= $q !== '' ? '?q=' . urlencode($q) : '' ?>#catalogo" <?= $region === '' ? 'aria-current="true"' : '' ?>>Todas las regiones</a>
-      <?php foreach ($regiones as $r): ?>
-        <a class="chip" href="index.php?<?= e(http_build_query(array_filter(['q' => $q, 'region' => $r]))) ?>#catalogo" <?= $region === $r ? 'aria-current="true"' : '' ?>><?= e($r) ?></a>
-      <?php endforeach; ?>
-    </nav>
-    <?php endif; ?>
 
     <?php if ($q !== ''): ?>
       <p class="resultado"><?= count($productos) ?> <?= count($productos) == 1 ? 'resultado' : 'resultados' ?> para “<?= e($q) ?>”. <a href="index.php#catalogo">Ver todo</a></p>

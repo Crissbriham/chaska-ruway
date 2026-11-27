@@ -48,7 +48,7 @@ include 'includes/cabecera.php';
         <div>
           <?php if (!$cancelado): ?>
             <ol class="seguimiento" aria-label="Estado del pedido">
-              <?php foreach ($pasos as $paso): $hecho = (int)$paso['orden'] <= $actual; ?>
+              <?php foreach ($pasos as $paso): if ($paso['nombre'] === 'Pendiente') continue; $hecho = (int)$paso['orden'] <= $actual; ?>
                 <li class="<?= $hecho ? 'hecho' : '' ?>">
                   <?= e($paso['nombre']) ?>
                   <?php if ($hecho && isset($historial[$id_pe][(int)$paso['id_estado']])): ?>

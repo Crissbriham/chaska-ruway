@@ -81,6 +81,10 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); }
 .boton--ancho { width: 100%; }
 .enlace-boton { background: none; border: 0; padding: 0; color: var(--suave); text-decoration: underline; cursor: pointer; font: inherit; font-size: .95rem; }
 .enlace-boton:hover { color: var(--cochinilla); }
+/* Botón de tachito para quitar productos del carrito */
+.boton-tacho { display: inline-flex; align-items: center; justify-content: center; width: 2.4rem; height: 2.4rem; margin-top: .35rem; padding: 0; border: 1px solid #e3b9b9; border-radius: 50%; background: #fff5f5; color: #a12626; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.boton-tacho svg { width: 1.15rem; height: 1.15rem; }
+.boton-tacho:hover, .boton-tacho:focus-visible { background: #a12626; border-color: #a12626; color: #fff; }
 label { display: block; font-weight: 700; margin: 0 0 .3rem; font-size: .95rem; }
 input[type=text], input[type=email], input[type=password], input[type=number], input[type=search], select, textarea {
   width: 100%; font: inherit; padding: .65rem .8rem; border: 1px solid #BEBCB2; border-radius: 4px; background: var(--blanco); color: var(--texto);
@@ -246,7 +250,7 @@ form:has(#dir-nueva:checked) .campos-nueva { display: grid; }
 .etiqueta--Enviado { background: #E3E7F7; color: var(--anil); }
 .etiqueta--Entregado { background: #E2EFE4; color: var(--ok); }
 .etiqueta--Cancelado { background: #F8E1E8; color: var(--cochinilla); }
-.seguimiento { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
+.seguimiento { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
 .seguimiento li { position: relative; padding-top: 1.6rem; font-size: .88rem; color: var(--suave); text-align: center; }
 .seguimiento li::before { content: ""; position: absolute; top: .35rem; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--blanco); border: 2px solid #BEBCB2; z-index: 1; }
 .seguimiento li::after { content: ""; position: absolute; top: .73rem; left: -50%; width: 100%; height: 2px; background: #BEBCB2; }

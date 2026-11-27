@@ -38,7 +38,9 @@ include 'includes/cabecera.php';
               <form method="post" action="accion.php">
                 <input type="hidden" name="accion" value="quitar">
                 <input type="hidden" name="id_detalle" value="<?= (int)$it['id_detalle'] ?>">
-                <button class="enlace-boton" type="submit">Quitar</button>
+                <button class="boton-tacho" type="submit" title="Quitar del carrito" aria-label="Quitar <?= e($it['nombre']) ?> del carrito">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                </button>
               </form>
             </div>
             <form method="post" action="accion.php" class="item__cantidad">
