@@ -1,10 +1,37 @@
 const API_RESENAS = 'http://158.23.24.60:3000/api/resenas';
+const STORAGE_PROPIAS = 'chaska_mis_resenas';
+const MAX_HILOS_VISIBLES = 3;
+
 let cacheResenas = [];
+let hilosExpandidos = {};
 
 function escaparHTML(texto) {
   const div = document.createElement('div');
   div.textContent = texto ?? '';
   return div.innerHTML;
+}
+
+function obtenerMisResenasLocales() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_PROPIAS)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function registrarResenaPropia(idMongo) {
+  if (!idMongo) return;
+  const actuales = obtenerMisResenasLocales();
+  if (!actuales.includes(idMongo)) {
+    actuales.push(idMongo);
+    localStorage.setItem(STORAGE_PROPIAS, JSON.stringify(actuales));
+  }
+}
+
+function esResenaPropia(r) {
+  const porSesion = Number(COMPRADOR_ID) > 0 && Number(r.id_comprador) === Number(COMPRADOR_ID);
+  const porNavegador = obtenerMisResenasLocales().includes(r._id);
+  return porSesion || porNavegador;
 }
 
 function dibujarEstrellas(puntuacion) {
@@ -65,9 +92,20 @@ function renderizarTarjetaResena(r) {
   const likes = Number(r.likes) || 0;
   const fecha = r.fecha_publicacion ? new Date(r.fecha_publicacion).toLocaleDateString('es-PE') : 'Reciente';
   const hilos = Array.isArray(r.hilos_respuesta) ? r.hilos_respuesta : [];
+  const expandido = Boolean(hilosExpandidos[r._id]);
 
-  const htmlHilos = hilos.map(h => `
-    <div style="margin-top:0.75rem;padding:0.75rem 1rem;background:#f8f5f0;border-left:3px solid #8c2d38;border-radius:6px;">
+  // Limita los hilos visibles para que tarjetas con muchas respuestas no estiren la página
+  const hilosMostrados = expandido ? hilos : hilos.slice(-MAX_HILOS_VISIBLES);
+  const ocultos = hilos.length - hilosMostrados.length;
+
+  const botonExpandir = hilos.length > MAX_HILOS_VISIBLES
+    ? `<button type="button" class="enlace-boton" style="font-size:0.83rem;margin-top:0.6rem;display:inline-block;" onclick="alternarHilos('${r._id}')">
+        ${expandido ? '▲ Ocultar respuestas anteriores' : `▼ Ver ${ocultos} ${ocultos === 1 ? 'respuesta anterior' : 'respuestas anteriores'} (${hilos.length} en total)`}
+       </button>`
+    : '';
+
+  const htmlHilos = hilosMostrados.map(h => `
+    <div style="margin-top:0.65rem;padding:0.7rem 0.95rem;background:#f8f5f0;border-left:3px solid #8c2d38;border-radius:6px;">
       <div style="font-size:0.85rem;font-weight:700;color:#2b1d16;">
         ↳ ${escaparHTML(h.username || 'Taller_Artesano')}
         <span style="font-weight:400;font-size:0.78rem;background:#e8dfd5;padding:2px 7px;border-radius:999px;margin-left:4px;">${escaparHTML(h.rol_usuario || 'Vendedor')}</span>
@@ -75,6 +113,13 @@ function renderizarTarjetaResena(r) {
       <p style="margin:0.35rem 0 0;font-size:0.92rem;">${escaparHTML(h.comentario)}</p>
     </div>
   `).join('');
+
+  // Solo muestra el botón Eliminar si la reseña pertenece al usuario actual
+  const botonEliminar = esResenaPropia(r)
+    ? `<button type="button" class="enlace-boton" style="color:#a12626;font-size:0.85rem;margin-left:auto;" onclick="eliminarResena('${r._id}')">
+        Eliminar
+       </button>`
+    : '';
 
   return `
     <article class="resena" style="margin-bottom:1.25rem;">
@@ -95,9 +140,7 @@ function renderizarTarjetaResena(r) {
         <button type="button" class="boton boton--borde" style="padding:0.35rem 0.75rem;font-size:0.85rem;" onclick="toggleFormRespuesta('${r._id}')">
           💬 Responder
         </button>
-        <button type="button" class="enlace-boton" style="color:#a12626;font-size:0.85rem;margin-left:auto;" onclick="eliminarResena('${r._id}')">
-          Eliminar
-        </button>
+        ${botonEliminar}
       </div>
 
       <div id="form-resp-${r._id}" style="display:none;margin-top:0.75rem;padding:0.75rem;background:#faf8f5;border-radius:8px;border:1px solid #e5ddd3;">
@@ -109,14 +152,23 @@ function renderizarTarjetaResena(r) {
           </select>
         </div>
         <div style="display:flex;gap:0.5rem;">
-          <input type="text" id="resp-texto-${r._id}" placeholder="Escribe una respuesta al comentario..." style="flex:1;padding:0.45rem 0.65rem;border:1px solid #ccc;border-radius:6px;">
-          <button type="button" class="boton" style="padding:0.45rem 0.9rem;font-size:0.85rem;" onclick="enviarRespuesta('${r._id}')">Enviar</button>
+          <input type="text" id="resp-texto-${r._id}" maxlength="400" placeholder="Escribe una respuesta al comentario..." style="flex:1;padding:0.45rem 0.65rem;border:1px solid #ccc;border-radius:6px;">
+          <button type="button" id="btn-resp-${r._id}" class="boton" style="padding:0.45rem 0.9rem;font-size:0.85rem;" onclick="enviarRespuesta('${r._id}')">Enviar</button>
         </div>
       </div>
 
+      ${botonExpandir}
       ${htmlHilos}
     </article>
   `;
+}
+
+function alternarHilos(id) {
+  hilosExpandidos[id] = !hilosExpandidos[id];
+  const contenedorLista = document.getElementById('lista-resenas-mongo');
+  if (contenedorLista) {
+    contenedorLista.innerHTML = cacheResenas.map(r => renderizarTarjetaResena(r)).join('');
+  }
 }
 
 async function crearResenaMongo(evento) {
@@ -133,7 +185,7 @@ async function crearResenaMongo(evento) {
 
   const payload = {
     id_producto: Number(PRODUCTO_ID),
-    id_comprador: Number(COMPRADOR_ID) || 101,
+    id_comprador: Number(COMPRADOR_ID) > 0 ? Number(COMPRADOR_ID) : null,
     perfil_comprador: { username, etiqueta },
     titulo,
     comentario,
@@ -149,6 +201,10 @@ async function crearResenaMongo(evento) {
       body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('Error al guardar reseña');
+    const creada = await res.json();
+    if (creada.id_insertado) {
+      registrarResenaPropia(creada.id_insertado);
+    }
     document.getElementById('form-resena-mongo').reset();
     await cargarResenasMongo();
   } catch (err) {
@@ -163,12 +219,16 @@ async function darLikeResena(id) {
   const actual = cacheResenas.find(r => r._id === id);
   if (!actual) return;
   const nuevosLikes = (Number(actual.likes) || 0) + 1;
-  await fetch(`${API_RESENAS}/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ likes: nuevosLikes })
-  });
-  await cargarResenasMongo();
+  try {
+    await fetch(`${API_RESENAS}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ likes: nuevosLikes })
+    });
+    await cargarResenasMongo();
+  } catch (err) {
+    alert('Error al actualizar likes: ' + err.message);
+  }
 }
 
 function toggleFormRespuesta(id) {
@@ -179,8 +239,14 @@ function toggleFormRespuesta(id) {
 async function enviarRespuesta(id) {
   const actual = cacheResenas.find(r => r._id === id);
   if (!actual) return;
-  const texto = document.getElementById(`resp-texto-${id}`).value.trim();
+
+  const inputTexto = document.getElementById(`resp-texto-${id}`);
+  const btnEnviar = document.getElementById(`btn-resp-${id}`);
+  const texto = inputTexto.value.trim();
   if (!texto) return;
+
+  btnEnviar.disabled = true;
+  btnEnviar.textContent = 'Enviando...';
 
   const username = document.getElementById(`resp-user-${id}`).value.trim() || 'Artesanias_Chaska';
   const rol_usuario = document.getElementById(`resp-rol-${id}`).value;
@@ -191,18 +257,32 @@ async function enviarRespuesta(id) {
     { id_respuesta: 'resp_' + Date.now(), username, rol_usuario, comentario: texto, likes: 0 }
   ];
 
-  await fetch(`${API_RESENAS}/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ hilos_respuesta: nuevoHilo })
-  });
-  await cargarResenasMongo();
+  try {
+    await fetch(`${API_RESENAS}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hilos_respuesta: nuevoHilo })
+    });
+    hilosExpandidos[id] = true;
+    await cargarResenasMongo();
+  } catch (err) {
+    alert('Error al responder: ' + err.message);
+    btnEnviar.disabled = false;
+    btnEnviar.textContent = 'Enviar';
+  }
 }
 
 async function eliminarResena(id) {
-  if (!confirm('¿Eliminar esta reseña de MongoDB?')) return;
-  await fetch(`${API_RESENAS}/${id}`, { method: 'DELETE' });
-  await cargarResenasMongo();
+  const actual = cacheResenas.find(r => r._id === id);
+  if (!actual || !esResenaPropia(actual)) return;
+  if (!confirm('¿Eliminar tu reseña de MongoDB?')) return;
+
+  try {
+    await fetch(`${API_RESENAS}/${id}`, { method: 'DELETE' });
+    await cargarResenasMongo();
+  } catch (err) {
+    alert('Error al eliminar: ' + err.message);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
