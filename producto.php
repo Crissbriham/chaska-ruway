@@ -135,7 +135,7 @@ include 'includes/cabecera.php';
       const PRODUCTO_ID = <?= (int)$p['id_producto'] ?>;
       const COMPRADOR_ID = <?= (int)($idu ?? 0) ?>;
     </script>
-    <script src="js/resenas-mongo.js"></script>
+   <script src="js/resenas-mongo.js?v=<?= time() ?>"></script>
 
     <?php if ($relacionados): ?>
       <section class="seccion">

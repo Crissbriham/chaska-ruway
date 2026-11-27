@@ -1,5 +1,6 @@
 const API_RESENAS = 'http://158.23.24.60:3000/api/resenas';
-const STORAGE_PROPIAS = 'chaska_mis_resenas';
+const STORAGE_MIS_RESENAS = 'chaska_mis_resenas';
+const STORAGE_MIS_RESPUESTAS = 'chaska_mis_respuestas';
 const MAX_HILOS_VISIBLES = 3;
 
 let cacheResenas = [];
@@ -11,26 +12,33 @@ function escaparHTML(texto) {
   return div.innerHTML;
 }
 
-function obtenerMisResenasLocales() {
+function obtenerLocalArray(clave) {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_PROPIAS)) || [];
+    const data = JSON.parse(localStorage.getItem(clave));
+    return Array.isArray(data) ? data : [];
   } catch {
     return [];
   }
 }
 
-function registrarResenaPropia(idMongo) {
-  if (!idMongo) return;
-  const actuales = obtenerMisResenasLocales();
-  if (!actuales.includes(idMongo)) {
-    actuales.push(idMongo);
-    localStorage.setItem(STORAGE_PROPIAS, JSON.stringify(actuales));
+function registrarEnLocal(clave, id) {
+  if (!id) return;
+  const actuales = obtenerLocalArray(clave);
+  if (!actuales.includes(id)) {
+    actuales.push(id);
+    localStorage.setItem(clave, JSON.stringify(actuales));
   }
 }
 
 function esResenaPropia(r) {
   const porSesion = Number(COMPRADOR_ID) > 0 && Number(r.id_comprador) === Number(COMPRADOR_ID);
-  const porNavegador = obtenerMisResenasLocales().includes(r._id);
+  const porNavegador = obtenerLocalArray(STORAGE_MIS_RESENAS).includes(r._id);
+  return porSesion || porNavegador;
+}
+
+function esRespuestaPropia(h) {
+  const porSesion = Number(COMPRADOR_ID) > 0 && Number(h.id_comprador) === Number(COMPRADOR_ID);
+  const porNavegador = Boolean(h.id_respuesta) && obtenerLocalArray(STORAGE_MIS_RESPUESTAS).includes(h.id_respuesta);
   return porSesion || porNavegador;
 }
 
@@ -94,7 +102,6 @@ function renderizarTarjetaResena(r) {
   const hilos = Array.isArray(r.hilos_respuesta) ? r.hilos_respuesta : [];
   const expandido = Boolean(hilosExpandidos[r._id]);
 
-  // Limita los hilos visibles para que tarjetas con muchas respuestas no estiren la página
   const hilosMostrados = expandido ? hilos : hilos.slice(-MAX_HILOS_VISIBLES);
   const ocultos = hilos.length - hilosMostrados.length;
 
@@ -104,18 +111,26 @@ function renderizarTarjetaResena(r) {
        </button>`
     : '';
 
-  const htmlHilos = hilosMostrados.map(h => `
-    <div style="margin-top:0.65rem;padding:0.7rem 0.95rem;background:#f8f5f0;border-left:3px solid #8c2d38;border-radius:6px;">
-      <div style="font-size:0.85rem;font-weight:700;color:#2b1d16;">
-        ↳ ${escaparHTML(h.username || 'Taller_Artesano')}
-        <span style="font-weight:400;font-size:0.78rem;background:#e8dfd5;padding:2px 7px;border-radius:999px;margin-left:4px;">${escaparHTML(h.rol_usuario || 'Vendedor')}</span>
-      </div>
-      <p style="margin:0.35rem 0 0;font-size:0.92rem;">${escaparHTML(h.comentario)}</p>
-    </div>
-  `).join('');
+  const htmlHilos = hilosMostrados.map(h => {
+    const btnEliminarHilo = esRespuestaPropia(h)
+      ? `<button type="button" class="enlace-boton" style="color:#a12626;font-size:0.78rem;margin-left:auto;" onclick="eliminarRespuesta('${r._id}', '${escaparHTML(h.id_respuesta)}')">
+          Eliminar
+         </button>`
+      : '';
 
-  // Solo muestra el botón Eliminar si la reseña pertenece al usuario actual
-  const botonEliminar = esResenaPropia(r)
+    return `
+      <div style="margin-top:0.65rem;padding:0.7rem 0.95rem;background:#f8f5f0;border-left:3px solid #8c2d38;border-radius:6px;">
+        <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;font-weight:700;color:#2b1d16;">
+          <span>↳ ${escaparHTML(h.username || 'Taller_Artesano')}</span>
+          <span style="font-weight:400;font-size:0.78rem;background:#e8dfd5;padding:2px 7px;border-radius:999px;">${escaparHTML(h.rol_usuario || 'Vendedor')}</span>
+          ${btnEliminarHilo}
+        </div>
+        <p style="margin:0.35rem 0 0;font-size:0.92rem;">${escaparHTML(h.comentario)}</p>
+      </div>
+    `;
+  }).join('');
+
+  const botonEliminarResena = esResenaPropia(r)
     ? `<button type="button" class="enlace-boton" style="color:#a12626;font-size:0.85rem;margin-left:auto;" onclick="eliminarResena('${r._id}')">
         Eliminar
        </button>`
@@ -140,7 +155,7 @@ function renderizarTarjetaResena(r) {
         <button type="button" class="boton boton--borde" style="padding:0.35rem 0.75rem;font-size:0.85rem;" onclick="toggleFormRespuesta('${r._id}')">
           💬 Responder
         </button>
-        ${botonEliminar}
+        ${botonEliminarResena}
       </div>
 
       <div id="form-resp-${r._id}" style="display:none;margin-top:0.75rem;padding:0.75rem;background:#faf8f5;border-radius:8px;border:1px solid #e5ddd3;">
@@ -203,7 +218,7 @@ async function crearResenaMongo(evento) {
     if (!res.ok) throw new Error('Error al guardar reseña');
     const creada = await res.json();
     if (creada.id_insertado) {
-      registrarResenaPropia(creada.id_insertado);
+      registrarEnLocal(STORAGE_MIS_RESENAS, creada.id_insertado);
     }
     document.getElementById('form-resena-mongo').reset();
     await cargarResenasMongo();
@@ -251,10 +266,18 @@ async function enviarRespuesta(id) {
   const username = document.getElementById(`resp-user-${id}`).value.trim() || 'Artesanias_Chaska';
   const rol_usuario = document.getElementById(`resp-rol-${id}`).value;
   const hilosActuales = Array.isArray(actual.hilos_respuesta) ? actual.hilos_respuesta : [];
+  const idRespuesta = 'resp_' + Date.now();
 
   const nuevoHilo = [
     ...hilosActuales,
-    { id_respuesta: 'resp_' + Date.now(), username, rol_usuario, comentario: texto, likes: 0 }
+    {
+      id_respuesta: idRespuesta,
+      id_comprador: Number(COMPRADOR_ID) > 0 ? Number(COMPRADOR_ID) : null,
+      username,
+      rol_usuario,
+      comentario: texto,
+      likes: 0
+    }
   ];
 
   try {
@@ -263,6 +286,7 @@ async function enviarRespuesta(id) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ hilos_respuesta: nuevoHilo })
     });
+    registrarEnLocal(STORAGE_MIS_RESPUESTAS, idRespuesta);
     hilosExpandidos[id] = true;
     await cargarResenasMongo();
   } catch (err) {
@@ -282,6 +306,29 @@ async function eliminarResena(id) {
     await cargarResenasMongo();
   } catch (err) {
     alert('Error al eliminar: ' + err.message);
+  }
+}
+
+async function eliminarRespuesta(idResena, idRespuesta) {
+  const actual = cacheResenas.find(r => r._id === idResena);
+  if (!actual) return;
+
+  const hilosActuales = Array.isArray(actual.hilos_respuesta) ? actual.hilos_respuesta : [];
+  const objetivo = hilosActuales.find(h => h.id_respuesta === idRespuesta);
+  if (!objetivo || !esRespuestaPropia(objetivo)) return;
+  if (!confirm('¿Eliminar tu respuesta?')) return;
+
+  const hilosActualizados = hilosActuales.filter(h => h.id_respuesta !== idRespuesta);
+
+  try {
+    await fetch(`${API_RESENAS}/${idResena}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hilos_respuesta: hilosActualizados })
+    });
+    await cargarResenasMongo();
+  } catch (err) {
+    alert('Error al eliminar respuesta: ' + err.message);
   }
 }
 
