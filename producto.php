@@ -12,9 +12,6 @@ $favs = obtenerIdsFavoritos($idu);
 
 if ($p) {
     $titulo_pagina = $p['nombre'] . ' | Chaska Ruway';
-    $resenas = obtenerResenas($id);
-    $compro = $idu ? pedidoDeCompra($idu, $id) : null;
-    $ya_reseno = $idu ? yaReseno($idu, $id) : false;
     $en_carrito = 0;
     if ($idu) {
         foreach (obtenerItemsCarrito($idu) as $it) if ((int)$it['id_producto'] === $id) $en_carrito = (int)$it['cantidad'];
@@ -40,7 +37,7 @@ include 'includes/cabecera.php';
         <?php if (!$p['visible']): ?><p class="aviso aviso--error" style="margin:0 0 1rem">Este producto está oculto: los compradores no lo ven. Puedes volver a mostrarlo desde "Editar este producto".</p><?php endif; ?>
         <h1><?= e($p['nombre']) ?></h1>
         <p class="taller-linea">Hecho en <strong><?= e($p['nombre_taller']) ?></strong>, <?= e($p['region']) ?></p>
-        <a href="#resenas" style="text-decoration:none"><?= estrellas($p['promedio'], (int)$p['num_resenas']) ?></a>
+        <a href="#resenas" style="text-decoration:none;font-weight:600;color:#8c2d38;">★ Ver reseñas y comunidad</a>
         <span class="precio"><?= soles($p['precio']) ?></span>
         <p class="detalle__desc"><?= e($p['descripcion']) ?></p>
         <p class="disponibles"><?= (int)$p['stock'] > 0
@@ -89,58 +86,56 @@ include 'includes/cabecera.php';
     <section id="resenas" class="resenas">
       <div>
         <h2>Reseñas</h2>
-        <?php if ($p['num_resenas'] > 0): ?>
-          <div class="resumen-nota"><?= number_format((float)$p['promedio'], 1) ?></div>
-          <?= estrellas($p['promedio']) ?>
-          <span class="nota"><?= (int)$p['num_resenas'] ?> <?= $p['num_resenas'] == 1 ? 'reseña' : 'reseñas' ?></span>
-        <?php else: ?>
-          <p class="ayuda">Todavía nadie ha reseñado este producto.</p>
-        <?php endif; ?>
+        <p id="estado-api-mongo" style="font-size:0.82rem;font-weight:600;margin-bottom:0.5rem;">Conectando con MongoDB...</p>
+        <div id="resumen-resenas-mongo">
+          <p class="ayuda">Cargando calificaciones...</p>
+        </div>
 
         <div style="margin-top:1.5rem">
-          <?php if ($idv): ?>
-            <p class="ayuda">Las reseñas las escriben los compradores.</p>
-          <?php elseif (!$idu): ?>
-          <?php elseif ($ya_reseno): ?>
-            <p class="ayuda">Ya publicaste tu reseña de este producto.</p>
-          <?php elseif (!$compro): ?>
-            <p class="ayuda">Podrás dejar una reseña cuando compres este producto.</p>
-          <?php else: ?>
-            <form method="post" action="accion.php" class="caja">
-              <input type="hidden" name="accion" value="resena">
-              <input type="hidden" name="id_producto" value="<?= (int)$p['id_producto'] ?>">
-              <fieldset class="elegir-estrellas">
-                <legend>Tu calificación</legend>
-                <?php for ($i = 5; $i >= 1; $i--): ?>
-                  <input type="radio" id="est<?= $i ?>" name="puntuacion" value="<?= $i ?>" <?= $i === 5 ? 'required' : '' ?>>
-                  <label for="est<?= $i ?>" title="<?= $i ?> de 5">★<span class="sr"><?= $i ?> de 5</span></label>
-                <?php endfor; ?>
-              </fieldset>
-              <div class="campo">
-                <label for="titulo">Título</label>
-                <input type="text" id="titulo" name="titulo" maxlength="150" placeholder="Resume tu experiencia">
-              </div>
-              <div class="campo">
-                <label for="comentario">Comentario</label>
-                <textarea id="comentario" name="comentario" placeholder="¿Cómo llegó? ¿Qué te pareció la pieza?"></textarea>
-              </div>
-              <button class="boton" type="submit">Publicar reseña</button>
-            </form>
-          <?php endif; ?>
+          <form id="form-resena-mongo" class="caja">
+            <h3 style="margin-top:0;font-size:1.05rem;">Deja tu reseña</h3>
+            <fieldset class="elegir-estrellas">
+              <legend>Tu calificación</legend>
+              <?php for ($i = 5; $i >= 1; $i--): ?>
+                <input type="radio" id="est<?= $i ?>" name="puntuacion" value="<?= $i ?>" <?= $i === 5 ? 'checked required' : '' ?>>
+                <label for="est<?= $i ?>" title="<?= $i ?> de 5">★<span class="sr"><?= $i ?> de 5</span></label>
+              <?php endfor; ?>
+            </fieldset>
+            <div class="campo">
+              <label for="mongo-username">Tu usuario</label>
+              <input type="text" id="mongo-username" required placeholder="Ej. diego_andes" value="<?= $idv ? 'Taller_Artesano' : '' ?>">
+            </div>
+            <div class="campo">
+              <label for="mongo-etiqueta">Tipo de perfil</label>
+              <select id="mongo-etiqueta">
+                <option value="Compra Verificada">Compra Verificada</option>
+                <option value="Visitante">Visitante</option>
+                <option value="Artesano Verificado">Artesano Verificado</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="titulo">Título</label>
+              <input type="text" id="titulo" maxlength="150" required placeholder="Resume tu experiencia">
+            </div>
+            <div class="campo">
+              <label for="comentario">Comentario</label>
+              <textarea id="comentario" required placeholder="¿Cómo llegó? ¿Qué te pareció la pieza?"></textarea>
+            </div>
+            <button id="btn-publicar-mongo" class="boton" type="submit">Publicar reseña</button>
+          </form>
         </div>
       </div>
 
-      <div>
-        <?php foreach ($resenas as $r): ?>
-          <article class="resena">
-            <?= estrellas($r['puntuacion']) ?>
-            <?php if ($r['titulo']): ?><h3><?= e($r['titulo']) ?></h3><?php endif; ?>
-            <?php if ($r['comentario']): ?><p><?= nl2br(e($r['comentario'])) ?></p><?php endif; ?>
-            <span class="resena__autor"><?= e($r['nombres'] . ' ' . inicial($r['apellidos']) . '.') ?>, <?= fecha($r['fecha']) ?></span>
-          </article>
-        <?php endforeach; ?>
+      <div id="lista-resenas-mongo">
+        <p class="ayuda">Cargando reseñas desde MongoDB...</p>
       </div>
     </section>
+
+    <script>
+      const PRODUCTO_ID = <?= (int)$p['id_producto'] ?>;
+      const COMPRADOR_ID = <?= (int)($idu ?? 0) ?>;
+    </script>
+    <script src="js/resenas-mongo.js"></script>
 
     <?php if ($relacionados): ?>
       <section class="seccion">

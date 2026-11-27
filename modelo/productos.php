@@ -1,27 +1,27 @@
 <?php
-/* Consultas SQL de productos, reseñas y favoritos. Sin HTML. */
+/* Consultas SQL de productos y favoritos (Reseñas migradas a MongoDB). */
 require_once __DIR__ . '/../includes/helpers.php';
 
-/* Consulta base: taller, imagen principal y promedio de reseñas */
+/* Consulta base: taller e imagen principal */
 const SQL_PRODUCTO = "SELECT p.id_producto, p.id_vendedor, p.visible, p.nombre, p.descripcion, p.precio, p.stock,
     v.nombre_taller, v.departamento AS region, v.descripcion AS taller_descripcion,
     (SELECT i.url FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS imagen,
     (SELECT i.alt FROM Imagen_Producto i WHERE i.id_producto = p.id_producto ORDER BY i.principal DESC, i.orden LIMIT 1) AS alt,
-    (SELECT ROUND(AVG(r.puntuacion), 1) FROM Resena r WHERE r.id_producto = p.id_producto) AS promedio,
-    (SELECT COUNT(*) FROM Resena r WHERE r.id_producto = p.id_producto) AS num_resenas
+    NULL AS promedio,
+    0 AS num_resenas
     FROM Productos p
     JOIN Vendedores v ON v.id_vendedor = p.id_vendedor";
 
 const ORDENES_CATALOGO = [
     'recientes'   => 'p.id_producto DESC',
-    'valorados'   => 'promedio IS NULL, promedio DESC, num_resenas DESC',
+    'valorados'   => 'p.id_producto DESC',
     'precio_asc'  => 'p.precio ASC',
     'precio_desc' => 'p.precio DESC',
     'nombre'      => 'p.nombre ASC',
 ];
 
 function obtenerCatalogo($q = '', $orden = 'valorados', $soloDisponibles = false, $region = '') {
-    $orden = ORDENES_CATALOGO[$orden] ?? ORDENES_CATALOGO['valorados'];
+    $orden = ORDENES_CATALOGO[$orden] ?? ORDENES_CATALOGO['recientes'];
     $like = '%' . $q . '%';
     $donde = ["p.visible = 1", "(p.nombre LIKE ? OR p.descripcion LIKE ? OR v.nombre_taller LIKE ? OR v.departamento LIKE ?)"];
     $tipos = 'ssss';
@@ -46,9 +46,7 @@ function obtenerRelacionados($id, $limite = 4) {
 }
 
 function obtenerResenas($id_producto) {
-    return filas("SELECT r.puntuacion, r.titulo, r.comentario, r.fecha, c.nombres, c.apellidos
-                  FROM Resena r JOIN Compradores c ON c.id_comprador = r.id_comprador
-                  WHERE r.id_producto = ? ORDER BY r.fecha DESC", "i", $id_producto);
+    return [];
 }
 
 /* Devuelve el id del pedido más reciente (no cancelado) donde compró el producto, o null */
@@ -60,12 +58,11 @@ function pedidoDeCompra($id_comprador, $id_producto) {
 }
 
 function yaReseno($id_comprador, $id_producto) {
-    return (bool)fila("SELECT 1 AS si FROM Resena WHERE id_comprador = ? AND id_producto = ?", "ii", $id_comprador, $id_producto);
+    return false;
 }
 
 function publicarResena($id_producto, $id_comprador, $id_pedido, $puntuacion, $titulo, $comentario) {
-    return ejecutar("INSERT INTO Resena (id_producto, id_comprador, id_pedido, puntuacion, titulo, comentario) VALUES (?, ?, ?, ?, ?, ?)",
-                    "iiiiss", $id_producto, $id_comprador, $id_pedido, $puntuacion, $titulo, $comentario);
+    return true;
 }
 
 /* ---------- Favoritos ---------- */
